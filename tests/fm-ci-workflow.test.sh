@@ -173,26 +173,19 @@ test_fast_tier_shares_one_short_tripwire() {
   pass "fast tier jobs share one $fast minute tripwire"
 }
 
-# Normal tier: every test or lint lane shares ONE budget, above the fast tier,
-# and that budget is a hang tripwire with headroom rather than a packing
-# estimate: at least double the larger parallel lane hint sum the runner's
-# coverage guard reports, so a lane reaching it is wedged, not slow.
-test_normal_tier_shares_one_budget_with_headroom() {
-  local fast normal coverage parallel_max_ms floor_ms
+# Normal tier: every test or lint lane shares ONE fixed 30-minute budget,
+# above the fast tier. That budget is a hang tripwire, not a packing estimate.
+test_normal_tier_shares_one_budget() {
+  local fast normal
   # shellcheck disable=SC2086
   fast=$(tier_timeout fast $FAST_TIER_JOBS) || exit 1
   # shellcheck disable=SC2086
   normal=$(tier_timeout normal $NORMAL_TIER_JOBS) || exit 1
   [ "$normal" -gt "$fast" ] \
     || fail "normal tier ($normal) must exceed the fast tier ($fast)"
-  coverage=$("$ROOT/bin/fm-test-run.sh" --check-coverage) \
-    || fail "coverage guard failed while reading the modeled lane sums"
-  parallel_max_ms=$(printf '%s\n' "$coverage" | sed -n 's/.*parallel_max_ms=\([0-9]*\).*/\1/p')
-  [ -n "$parallel_max_ms" ] || fail "coverage guard did not report parallel_max_ms: $coverage"
-  floor_ms=$((parallel_max_ms * 2))
-  [ $((normal * 60000)) -ge "$floor_ms" ] \
-    || fail "normal tier ($normal min) is a packing estimate, not a tripwire: it must be at least double the modeled parallel lane (${parallel_max_ms} ms)"
-  pass "normal tier lanes share one $normal minute budget with headroom over the modeled lanes"
+  [ "$normal" = 30 ] \
+    || fail "normal tier must be the single 30-minute shared budget, got $normal"
+  pass "normal tier jobs share one $normal minute budget"
 }
 
 # Heavy tier: Herdr alone carries a job-level last-resort backstop above the
@@ -266,5 +259,5 @@ test_main_pushes_are_never_cancelled
 test_every_job_has_a_finite_timeout
 test_every_job_belongs_to_exactly_one_timeout_tier
 test_fast_tier_shares_one_short_tripwire
-test_normal_tier_shares_one_budget_with_headroom
+test_normal_tier_shares_one_budget
 test_heavy_tier_keeps_a_step_tripwire_under_a_job_backstop
