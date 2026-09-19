@@ -83,8 +83,8 @@ case "${1:-}" in
             payload=$a
             script=
             case "$payload" in
-              'exec /bin/sh '*)
-                script=${payload#exec /bin/sh }
+              '/bin/sh '*)
+                script=${payload#/bin/sh }
                 script=${script#\'}
                 script=${script%\'}
                 ;;

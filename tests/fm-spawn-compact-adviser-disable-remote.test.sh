@@ -121,9 +121,9 @@ remote_pane_payload() {  # <verb>
 }
 remote_launch_command() {
   local typed script
-  typed=$(remote_pane_payload send-text | grep '^exec /bin/sh ' | tail -1)
+  typed=$(remote_pane_payload send-text | grep '^/bin/sh ' | tail -1)
   if [ -n "$typed" ]; then
-    script=${typed#exec /bin/sh }
+    script=${typed#/bin/sh }
     script=${script#\'}
     script=${script%\'}
     if [ -f "$script" ]; then

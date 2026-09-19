@@ -70,7 +70,7 @@ case "${1:-}" in
           fi
           printf 'zsh' > "$D/command.$target"
           ;;
-        'exec /bin/sh '*|*'encode launch-brief'*) cat "$D/becomes" > "$D/command.$target" ;;
+        '/bin/sh '*|*'encode launch-brief'*) cat "$D/becomes" > "$D/command.$target" ;;
         ': Firstmate instruction waiting: list '*)
           printf 'doorbell\n' >> "$D/rings"
           if [ -x "$D/on-doorbell" ]; then
@@ -142,12 +142,12 @@ new_case() {
 
 typed_launch_body() {  # <literal-file>
   local line script
-  line=$(grep 'exec /bin/sh ' "$1" | tail -1) || true
+  line=$(grep '/bin/sh ' "$1" | tail -1) || true
   if [ -z "$line" ]; then
     cat "$1"
     return 0
   fi
-  script=${line#exec /bin/sh }
+  script=${line#/bin/sh }
   script=${script#\'}
   script=${script%\'}
   if [ -f "$script" ]; then

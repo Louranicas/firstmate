@@ -76,7 +76,7 @@ case "${1:-}" in
           printf 'zsh' > "$D/command"
           [ -z "${FM_FAKE_EXIT_TRANSPORT_FAIL_AFTER_STOP:-}" ] || exit 1
           ;;
-        'exec /bin/sh '*|*'encode launch-brief'*)
+        '/bin/sh '*|*'encode launch-brief'*)
           cat "$D/becomes" > "$D/command"
           [ -z "${FM_FAKE_LAUNCH_TRANSPORT_FAIL_AFTER_START:-}" ] || exit 1
           ;;
@@ -146,12 +146,12 @@ new_case() {
 
 typed_launch_body() {  # <literal-file>
   local line script
-  line=$(grep 'exec /bin/sh ' "$1" | tail -1) || true
+  line=$(grep '/bin/sh ' "$1" | tail -1) || true
   if [ -z "$line" ]; then
     cat "$1"
     return 0
   fi
-  script=${line#exec /bin/sh }
+  script=${line#/bin/sh }
   script=${script#\'}
   script=${script%\'}
   if [ -f "$script" ]; then
@@ -345,7 +345,7 @@ test_same_harness_relaunch_keeps_identity_and_reuses_the_endpoint() {
   [ "$(journal_field "$dir" rl1 phase)" = complete ] \
     || fail "the transaction journal should end complete"
   assert_grep "/exit" "$dir/fake/literal" "the previous agent should have been exited"
-  assert_grep "exec /bin/sh " "$dir/fake/literal" "the replacement should have been launched"
+  assert_grep "/bin/sh " "$dir/fake/literal" "the replacement should have been launched"
   pass "fm-control relaunch: a same-harness relaunch replaces the agent in the same endpoint and worktree"
 }
 

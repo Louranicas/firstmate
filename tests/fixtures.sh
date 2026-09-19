@@ -95,7 +95,7 @@ fm_test_fake_gh_axi() {
 # Spawn-world tmux: pane_current_path from FM_FAKE_PANE_PATH, session named
 # firstmate, window ops succeed, send-keys succeed. When FM_FAKE_LAUNCH_LOG is
 # set, each send-keys -l payload is appended one per line. A payload of
-# `exec /bin/sh <script>` logs the script body instead, so assertions still see
+# `/bin/sh <script>` logs the script body instead, so assertions still see
 # the command the pane will run. Set FM_FAKE_TYPED_LAUNCH_LOG to record the
 # typed keys as sent. When FM_FAKE_PANE_LOG
 # is set, each send-keys TEXT-LINE payload (the pre-launch pane exports, which
@@ -134,8 +134,8 @@ case "${1:-}" in
             payload=$a
             script=
             case "$payload" in
-              'exec /bin/sh '*)
-                script=${payload#exec /bin/sh }
+              '/bin/sh '*)
+                script=${payload#/bin/sh }
                 script=${script#\'}
                 script=${script%\'}
                 ;;

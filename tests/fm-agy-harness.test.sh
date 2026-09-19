@@ -496,8 +496,8 @@ case "${1:-}" in
     if [ -n "$literal" ]; then
       body=$literal
       case "$literal" in
-        'exec /bin/sh '*)
-          script=${literal#exec /bin/sh }
+        '/bin/sh '*)
+          script=${literal#/bin/sh }
           script=${script#\'}
           script=${script%\'}
           [ -f "$script" ] && body=$(cat "$script")

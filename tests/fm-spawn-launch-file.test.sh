@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Claude (and any long) $LAUNCH is written to $TASK_TMP/launch.sh; the pane is
-# typed only `exec /bin/sh <script>` then a separate Enter (#4874).
+# typed only `/bin/sh <script>` then a separate Enter (#4874).
 #
 # Assertions drive fm-spawn and herdr send_literal, never spawn script source.
 set -u
@@ -51,11 +51,11 @@ test_spawn_types_short_exec_of_launch_script() {
   expect_code 0 "$status" "claude spawn should succeed"$'\n'"$out"
   typed=$(cat "$typedlog")
   case "$typed" in
-    'exec /bin/sh '*) ;;
-    *) fail "typed launch was not exec /bin/sh <script>, got: $typed" ;;
+    '/bin/sh '*) ;;
+    *) fail "typed launch was not /bin/sh <script>, got: $typed" ;;
   esac
   [ "${#typed}" -lt 512 ] || fail "typed launch is ${#typed} bytes; must stay far under 512"$'\n'"$typed"
-  script=${typed#exec /bin/sh }
+  script=${typed#/bin/sh }
   script=${script#\'}
   script=${script%\'}
   [ -f "$script" ] || fail "launch script missing at $script"
@@ -64,7 +64,7 @@ test_spawn_types_short_exec_of_launch_script() {
     "launch script dropped the system-prompt payload"
   assert_contains "$(cat "$launchlog")" "--append-system-prompt" \
     "logged launch body should still be the script contents"
-  pass "fm-spawn types a short exec of TASK_TMP/launch.sh and keeps the prompt in the file"
+  pass "fm-spawn types a short /bin/sh of TASK_TMP/launch.sh and keeps the prompt in the file"
 }
 
 test_herdr_fish_split_long_line_and_short_file_exec() {
@@ -180,7 +180,7 @@ SH
   script="$TMP_ROOT/tasktmp/launch.sh"
   printf '%s\n' "$long_line" >"$script"
   chmod 700 "$script"
-  typed="exec /bin/sh $(printf '%q' "$script")"
+  typed="/bin/sh $(printf '%q' "$script")"
   [ "${#typed}" -lt 512 ] || fail "short replacement is ${#typed} bytes"
 
   send_literal "$typed" || fail "short file-based send_literal failed"
@@ -190,8 +190,8 @@ SH
   [ "$count" -le 1 ] || fail "short file-based send showed overlapping launch prefixes (count=$count)"$'\n'"$cap"
   printf '%s' "$cap" | strip_ansi | grep -q 'Unknown command' \
     && fail "short file-based send printed Unknown command"$'\n'"$cap"
-  assert_contains "$(printf '%s' "$cap" | strip_ansi)" "exec /bin/sh" \
-    "pane did not show the short exec line"
+  assert_contains "$(printf '%s' "$cap" | strip_ansi)" "/bin/sh" \
+    "pane did not show the short /bin/sh line"
 
   send_key Enter || fail "Enter after short send failed"
   sleep 0.3

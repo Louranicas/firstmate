@@ -256,8 +256,10 @@
 #   See docs/configuration.md for provider/Git setup and supported limits.
 # Typed launch payload:
 #   The fully expanded $LAUNCH string is written to $TASK_TMP/launch.sh and the
-#   pane receives only `exec /bin/sh "$TASK_TMP/launch.sh"` via spawn_send_literal,
-#   then a separate Enter. herdr pane send-text injects raw keystrokes, not a
+#   pane receives only `/bin/sh "$TASK_TMP/launch.sh"` via spawn_send_literal,
+#   as a child of the pane's interactive shell, then a separate Enter. Do not
+#   exec: that would replace the pane shell and destroy the endpoint when the
+#   agent exits. herdr pane send-text injects raw keystrokes, not a
 #   paste, so a ~1100-character Claude line (the --append-system-prompt payload
 #   from #4464) can cross a ~1024-byte PTY write boundary and garble fish with
 #   plugins (#4874). The typed line stays far under 512 bytes on every backend.
@@ -4533,10 +4535,11 @@ if [ "$LAUNCH_ENV_ENABLED" = 1 ]; then
   fi
   LAUNCH="$LAUNCH_ENV_PREFIX /bin/sh -c $(shell_quote "$LAUNCH")"
 fi
-# Materialize the full launch as a POSIX script and type only the short exec.
-# spawn_send_literal plus a later Enter is the contract; do not collapse this
-# into pane run. The file lives under TASK_TMP so teardown removes it with the
-# rest of the per-task temp root.
+# Materialize the full launch as a POSIX script and type only the short
+# /bin/sh invocation as a child of the pane shell. spawn_send_literal plus a
+# later Enter is the contract; do not collapse this into pane run or exec the
+# script. The file lives under TASK_TMP so teardown removes it with the rest
+# of the per-task temp root.
 LAUNCH_SCRIPT="$TASK_TMP/launch.sh"
 if ! printf '%s\n' "$LAUNCH" >"$LAUNCH_SCRIPT"; then
   echo "error: could not write launch script $LAUNCH_SCRIPT" >&2
@@ -4546,7 +4549,7 @@ chmod 700 "$LAUNCH_SCRIPT" || {
   echo "error: could not chmod launch script $LAUNCH_SCRIPT" >&2
   exit 1
 }
-LAUNCH="exec /bin/sh $(shell_quote "$LAUNCH_SCRIPT")"
+LAUNCH="/bin/sh $(shell_quote "$LAUNCH_SCRIPT")"
 sleep 0.3
 spawn_send_literal "$T" "$LAUNCH"
 sleep 0.3
