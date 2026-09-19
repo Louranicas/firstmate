@@ -192,9 +192,7 @@ test_normal_tier_shares_one_budget() {
 # normal tier, while its family-run step owns a tighter tripwire so the
 # always() cleanup and timing upload still run after a hang.
 test_heavy_tier_keeps_a_step_tripwire_under_a_job_backstop() {
-  local normal heavy fast step
-  # shellcheck disable=SC2086
-  fast=$(tier_timeout fast $FAST_TIER_JOBS) || exit 1
+  local normal heavy step
   # shellcheck disable=SC2086
   normal=$(tier_timeout normal $NORMAL_TIER_JOBS) || exit 1
   # shellcheck disable=SC2086
@@ -214,8 +212,10 @@ raise "teardown must run under always()" unless steps[teardown]["if"].to_s.strip
 puts steps[index].fetch("timeout-minutes", "none")
 ' "$CI_WORKFLOW" tests-herdr) || fail "could not read the Herdr family-run step"
   case "$step" in ''|*[!0-9]*) fail "the Herdr family-run step needs its own timeout-minutes, got $step" ;; esac
-  [ "$step" -gt "$fast" ] && [ "$step" -lt "$heavy" ] \
-    || fail "the Herdr step tripwire ($step) must sit above the fast tier ($fast) and below the job backstop ($heavy)"
+  [ "$step" = 20 ] \
+    || fail "the Herdr family-run step must be the 20-minute tripwire, got $step"
+  [ "$step" -lt "$heavy" ] \
+    || fail "the Herdr step tripwire ($step) must stay below the job backstop ($heavy)"
   pass "Herdr keeps a $step minute step tripwire under a $heavy minute job backstop"
 }
 
