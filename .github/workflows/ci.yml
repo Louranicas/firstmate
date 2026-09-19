@@ -338,6 +338,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/fm-herdr"
           bin/fm-herdr-ci-cleanup.sh snapshot "$RUNNER_TEMP/fm-herdr/sessions-before.json"
       - name: Run real-Herdr family (serial, required)
+        id: run-real-herdr-family
         # Heavy tier step tripwire: above the healthy 7-10 minute wall and far
         # below the job backstop, so a hang fails this step and cleanup runs.
         timeout-minutes: 20
@@ -350,6 +351,7 @@ jobs:
             --fail-on-gate-skip 'herdr not found' \
             --json "$RUNNER_TEMP/fm-test/fm-test-timing-herdr.json"
       - name: Cleanup job-owned Herdr lab sessions
+        id: cleanup-herdr-lab-sessions
         if: always()
         run: |
           set -eu

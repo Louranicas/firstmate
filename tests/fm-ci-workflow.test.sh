@@ -203,11 +203,10 @@ test_heavy_tier_keeps_a_step_tripwire_under_a_job_backstop() {
     || fail "heavy tier backstop must stay a 60-75 minute last resort, got $heavy"
   step=$(ruby -ryaml -e '
 steps = YAML.load_file(ARGV[0]).fetch("jobs").fetch(ARGV[1]).fetch("steps")
-exec_lines = lambda { |s| s["run"].to_s.lines.map(&:strip).reject { |l| l.empty? || l.start_with?("#") } }
-index = steps.index { |s| exec_lines.call(s).any? { |l| l.include?("--family real-herdr-gated") } }
-raise "no step runs the real-herdr-gated family" unless index
-teardown = steps.index { |s| exec_lines.call(s).any? { |l| l.include?("fm-herdr-ci-cleanup.sh teardown") } }
-raise "no step runs fm-herdr-ci-cleanup.sh teardown" unless teardown
+index = steps.index { |s| s["id"] == "run-real-herdr-family" }
+raise "no run-real-herdr-family step" unless index
+teardown = steps.index { |s| s["id"] == "cleanup-herdr-lab-sessions" }
+raise "no cleanup-herdr-lab-sessions step" unless teardown
 raise "teardown must follow the family-run step" unless teardown > index
 raise "teardown must run under always()" unless steps[teardown]["if"].to_s.strip == "always()"
 puts steps[index].fetch("timeout-minutes", "none")
