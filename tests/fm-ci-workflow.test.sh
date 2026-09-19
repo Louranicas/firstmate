@@ -192,7 +192,7 @@ test_normal_tier_shares_one_budget() {
 # normal tier, while its family-run step owns a tighter tripwire so the
 # always() cleanup and timing upload still run after a hang.
 test_heavy_tier_keeps_a_step_tripwire_under_a_job_backstop() {
-  local normal heavy fast step_bounds step cleanup
+  local normal heavy fast step
   # shellcheck disable=SC2086
   fast=$(tier_timeout fast $FAST_TIER_JOBS) || exit 1
   # shellcheck disable=SC2086
@@ -203,22 +203,19 @@ test_heavy_tier_keeps_a_step_tripwire_under_a_job_backstop() {
     || fail "heavy tier backstop ($heavy) must exceed the normal tier ($normal)"
   [ "$heavy" -ge 60 ] && [ "$heavy" -le 75 ] \
     || fail "heavy tier backstop must stay a 60-75 minute last resort, got $heavy"
-  # "<step timeout>\t<always() steps after it>" for the step that runs the
-  # real-Herdr family, read from the parsed job rather than the file text.
-  step_bounds=$(ruby -ryaml -e '
+  step=$(ruby -ryaml -e '
 steps = YAML.load_file(ARGV[0]).fetch("jobs").fetch(ARGV[1]).fetch("steps")
 index = steps.index { |s| s["run"].to_s.include?("--family real-herdr-gated") }
 raise "no step runs the real-herdr-gated family" unless index
-cleanup = steps[(index + 1)..-1].count { |s| s["if"].to_s.strip == "always()" }
-puts [steps[index].fetch("timeout-minutes", "none"), cleanup].join("\t")
+teardown = steps.index { |s| s["run"].to_s.include?("fm-herdr-ci-cleanup.sh teardown") }
+raise "no step runs fm-herdr-ci-cleanup.sh teardown" unless teardown
+raise "teardown must follow the family-run step" unless teardown > index
+raise "teardown must run under always()" unless steps[teardown]["if"].to_s.strip == "always()"
+puts steps[index].fetch("timeout-minutes", "none")
 ' "$CI_WORKFLOW" tests-herdr) || fail "could not read the Herdr family-run step"
-  step=$(printf '%s\n' "$step_bounds" | cut -f1)
-  cleanup=$(printf '%s\n' "$step_bounds" | cut -f2)
   case "$step" in ''|*[!0-9]*) fail "the Herdr family-run step needs its own timeout-minutes, got $step" ;; esac
   [ "$step" -gt "$fast" ] && [ "$step" -lt "$heavy" ] \
     || fail "the Herdr step tripwire ($step) must sit above the fast tier ($fast) and below the job backstop ($heavy)"
-  [ "$cleanup" -ge 1 ] \
-    || fail "the Herdr family-run step must be followed by an always() cleanup step for its tripwire to protect"
   pass "Herdr keeps a $step minute step tripwire under a $heavy minute job backstop"
 }
 
