@@ -22,20 +22,9 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# Timeout policy: three tiers, so a reader can tell every job's bound from its
-# tier name instead of a per-job number. docs/fm-test-portable-shards.md
-# "Timeouts" owns the policy and tests/fm-ci-workflow.test.sh holds it.
-#   fast   (5 minutes)  seconds-long checks: coverage guard, repo invariants,
-#                       timing aggregate.
-#   normal (30 minutes) one budget shared by every test or lint lane: lint
-#                       partitions, portable parallel shards, portable serial
-#                       shards, macOS stock Bash.
-#   heavy  (Herdr only) a 20-minute step tripwire on the family run so the
-#                       always() cleanup still runs, under a 75-minute
-#                       job-level last-resort backstop.
-# Every value is a hang tripwire with headroom above the healthy duration,
-# never a packing estimate or runtime target: a lane that reaches its tier
-# bound is wedged, not slow.
+# Timeout policy: docs/fm-test-portable-shards.md "Timeouts" owns the three
+# tiers and their rationale; tests/fm-ci-workflow.test.sh guards this workflow.
+# Each job comment identifies the tier implemented by its executable value.
 
 jobs:
   lint:
