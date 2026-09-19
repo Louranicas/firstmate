@@ -33,7 +33,7 @@ The two parallel lanes use longest-processing-time assignment over those hints.
 [`bin/fm-test-run.sh`](../bin/fm-test-run.sh) holds the duration values in `portable_parallel_weight_hints` and the ordered memberships and lane-specific prerequisite constraints beside `list_portable_parallel_1` and `list_portable_parallel_2`.
 Read the derived packing estimates with that runner's `--check-coverage`; its header and `--help` own the output fields and the selection-specific `--list-scheduled` weight rules.
 The largest individual hint sets a lower bound on the estimated duration of any split, regardless of how evenly the remaining work is assigned.
-The CI cap and its rationale are owned by [`.github/workflows/ci.yml`](../.github/workflows/ci.yml).
+The CI cap follows the three-tier timeout policy in [Timeouts](#timeouts) below.
 
 [`tests/fm-test-run.test.sh`](../tests/fm-test-run.test.sh), in `test_portable_parallel_lanes_stay_duration_balanced`, requires every parallel member to have a hint and the lane sums to differ by no more than five percent of the larger sum.
 Its scheduling regressions also check stored parallel lane order and preserve serial-weight scheduling for other selections.
@@ -72,7 +72,7 @@ Refresh the hints whenever the serial lane gains scripts, rather than waiting fo
 Nine serial runners pack the refreshed measurements into a longest modeled script sum of 697969 ms (11m38s), with other shards near 10m36s.
 The longest script, `tests/fm-watch-triage.test.sh`, legitimately occupies one whole shard and is the indivisible floor for this layout.
 This is a packing estimate, not measured new-workflow execution or an end-to-end latency guarantee.
-Existing job timeouts remain hang tripwires; they are not the desired healthy duration.
+Job timeouts remain hang tripwires under the policy in [Timeouts](#timeouts) below; they are not the desired healthy duration.
 `tests/fm-ci-workflow.test.sh` compares the parsed CI matrix to the executable runner lanes, and the runner rejects parallel `--jobs` on a serial lane even when that shard has only one member.
 
 Refresh the CI-derived hints by downloading the per-shard timing artifacts from several green CI runs and replacing the `portable_serial_weight_hints` table in `bin/fm-test-run.sh` with the slowest measured `duration_ms` per `path`:
@@ -123,11 +123,16 @@ The workflow retains per-PR supersession without cancelling main pushes or chang
 
 ## Timeouts
 
-| Lane | Bound | Rationale |
-|---|---|---|
-| portable parallel 1/2 | See [CI workflow](../.github/workflows/ci.yml) | The workflow owns the parallel cap rationale and its evidence limits. |
-| portable serial shards | See [CI workflow](../.github/workflows/ci.yml) | Packing estimates are not healthy execution bounds; the existing cap remains a hang tripwire. |
-| Herdr | family-run step `timeout-minutes: 20`; job `timeout-minutes: 75` backstop | Healthy runs finished around 7 minutes before this lane gained `fm-backend-herdr-focus-flash-e2e`, which measures about 2 minutes against a real lab locally, so the step bound is still the hang tripwire (cleanup and timing artifacts still upload) while the job cap stays a last-resort backstop. Refresh this figure from the lane's uploaded timing artifact. |
+CI job timeouts follow one three-tier policy, so the workflow reads as a policy rather than as a collection of per-job numbers.
+Every tier is a hang tripwire with headroom above the healthy duration, never a packing estimate or a runtime target.
+A lane that reaches its tier bound is wedged, not slow, so changing a value is a policy change made in the workflow, this table, and the CI workflow test together, never a way to fit a slower lane.
 
-Timeouts are intended as hang tripwires; a passing coverage guard does not establish a healthy job duration.
-`.github/workflows/ci.yml` owns the exact numbers.
+| Tier | Jobs | Bound | Rationale |
+|---|---|---|---|
+| Fast | coverage guard, repo invariants, timing aggregate | 5 minutes | Seconds-long local work, so the tripwire only catches a hung runner. |
+| Normal | lint partitions, portable parallel shards, portable serial shards, macOS stock Bash | 30 minutes, one value shared by every job in the tier | The longest modeled portable serial shard is near 12 minutes and the larger parallel lane hint sum is near 7 minutes, so one shared budget leaves more than double the model and stops the lanes from drifting back to one-off caps. |
+| Heavy | Herdr | family-run step 20 minutes under a 75-minute job-level last-resort backstop | Healthy runs finish in about 7-10 minutes, so the step tripwire fails a wedged suite while the `always()` cleanup and timing upload still run, and the job cap only catches a hang outside that step. |
+
+[`.github/workflows/ci.yml`](../.github/workflows/ci.yml) holds the executable values and names each job's tier beside its `timeout-minutes`.
+[`tests/fm-ci-workflow.test.sh`](../tests/fm-ci-workflow.test.sh) holds the policy against the parsed workflow: every job belongs to exactly one tier, the workflow carries exactly three distinct job-level values, the fast tier stays within 5-10 minutes, the normal budget stays at least double the larger parallel lane hint sum that `bin/fm-test-run.sh --check-coverage` reports, and the Herdr step tripwire stays below its job backstop with an `always()` cleanup step after it.
+A passing coverage guard does not establish a healthy job duration; refresh the healthy figures above from the lanes' uploaded timing artifacts.
