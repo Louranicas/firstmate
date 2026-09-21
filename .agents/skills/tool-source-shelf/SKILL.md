@@ -1,6 +1,6 @@
 ---
 name: tool-source-shelf
-description: Agent-only pointer to the Kun Cheng (kunchenguid) source shelf, for a home that keeps one. Load before reading, inspecting, or patching the source behind a live axi, no-mistakes, or treehouse tool, before drawing on a capability repo (kun, compact-adviser, grok-ship, gnhf, backpass, vision), or before deciding anything about Pi context compaction.
+description: Agent-only pointer to the Kun Cheng (kunchenguid) source shelf. Load before reading, inspecting, or patching the source behind a live axi, no-mistakes, or treehouse tool, before drawing on a capability repo (kun, compact-adviser, grok-ship, gnhf, backpass, vision), or before deciding anything about Pi context compaction.
 user-invocable: false
 metadata:
   internal: true
@@ -9,10 +9,9 @@ metadata:
 # tool-source-shelf
 
 A home may keep Firstmate's tooling and several capability repos cloned as source on a local shelf, off the system disk.
-The shelf root is a home-local fact: on the captain's primary home it is `/var/mnt/STORAGE-10TB/repos`, and any other home records its own root in `data/learnings.md`.
-Confirm `KUNCHENGUID_REPOS.md` is present at that root before relying on any shelf pointer here; when the index is absent this home has no shelf and only the compaction facts below apply.
+Home-local clone paths, where this home has them, are recorded in `data/learnings.md`.
 
-`KUNCHENGUID_REPOS.md` is the shelf-side index for the Kun Cheng (kunchenguid) repos and owns their list, the clone rationale, the Jev ranking that puts `kun` first, and what was deliberately skipped.
+`KUNCHENGUID_REPOS.md` on that shelf is the index for the Kun Cheng (kunchenguid) repos and owns their list, the clone rationale, the Jev ranking that puts `kun` first, and what was deliberately skipped.
 Read it for which Kun Cheng repos are on the shelf rather than any list held here; it is not a full inventory of the shelf root, which also holds unrelated clones.
 
 ## Invoke the PATH binary, read the clone
@@ -25,4 +24,4 @@ The shelf's capability repos are not installed binaries at all; read them as sou
 
 `compact-adviser` sources its compact hints from Jev; Grok is hint-only there.
 `pi-openai-server-compaction` is OpenAI compaction, not Jev, and must not be pi-installed on Pi 0.86.
-Both hold whether or not this home has a shelf; neither depends on a local clone.
+Neither fact depends on a local clone.
