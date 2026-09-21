@@ -10,7 +10,7 @@ metadata:
 
 A home may keep Firstmate's tooling and several capability repos cloned as source on a local shelf, off the system disk.
 The shelf root is a home-local fact: on the captain's primary home it is `/var/mnt/STORAGE-10TB/repos`, and any other home records its own root in `data/learnings.md`.
-Confirm `KUNCHENGUID_REPOS.md` is present at that root before relying on anything here; when the index is absent this home has no shelf and nothing in this skill applies.
+Confirm `KUNCHENGUID_REPOS.md` is present at that root before relying on any shelf pointer here; when the index is absent this home has no shelf and only the compaction facts below apply.
 
 `KUNCHENGUID_REPOS.md` is the shelf-side index and owns the repo list, the clone rationale, the Jev ranking that puts `kun` first, and what was deliberately skipped.
 Read the index for what is on the shelf rather than any list held here.
@@ -25,3 +25,4 @@ The shelf's capability repos are not installed binaries at all; read them as sou
 
 `compact-adviser` sources its compact hints from Jev; Grok is hint-only there.
 `pi-openai-server-compaction` is OpenAI compaction, not Jev, and must not be pi-installed on Pi 0.86.
+Both hold whether or not this home has a shelf; neither depends on a local clone.
