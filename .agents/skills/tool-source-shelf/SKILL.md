@@ -23,5 +23,5 @@ The shelf's capability repos are not installed binaries at all; read them as sou
 ## Context compaction: two facts that must not be confused
 
 `compact-adviser` sources its compact hints from Jev; Grok is hint-only there.
-`pi-openai-server-compaction` is OpenAI compaction, not Jev, and must not be pi-installed on Pi 0.86.
+`pi-openai-server-compaction` is OpenAI compaction, not Jev; it targets Pi 0.80.x and must not be pi-installed on this fleet's Pi, which is 0.86 or later.
 Neither fact depends on a local clone.
