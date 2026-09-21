@@ -12,8 +12,8 @@ A home may keep Firstmate's tooling and several capability repos cloned as sourc
 The shelf root is a home-local fact: on the captain's primary home it is `/var/mnt/STORAGE-10TB/repos`, and any other home records its own root in `data/learnings.md`.
 Confirm `KUNCHENGUID_REPOS.md` is present at that root before relying on any shelf pointer here; when the index is absent this home has no shelf and only the compaction facts below apply.
 
-`KUNCHENGUID_REPOS.md` is the shelf-side index and owns the repo list, the clone rationale, the Jev ranking that puts `kun` first, and what was deliberately skipped.
-Read the index for what is on the shelf rather than any list held here.
+`KUNCHENGUID_REPOS.md` is the shelf-side index for the Kun Cheng (kunchenguid) repos and owns their list, the clone rationale, the Jev ranking that puts `kun` first, and what was deliberately skipped.
+Read it for which Kun Cheng repos are on the shelf rather than any list held here; it is not a full inventory of the shelf root, which also holds unrelated clones.
 
 ## Invoke the PATH binary, read the clone
 
