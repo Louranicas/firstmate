@@ -56,6 +56,7 @@ Default it off for every project and every posture, and enable it only on the ca
 
 A project's `VISION.md` is its testable accept-or-resist policy.
 When a project needs one or should refine an existing one, use the `vision` capability that `tool-source-shelf` owns, including how to invoke it and how a contribution is judged against the result.
+It writes `VISION.md` into the project, so propose it to the captain and let a crewmate carry it out through that project's selected delivery path rather than editing the clone from here.
 This is offered guidance, never a required step of adding a project.
 
 ## Add or clone an existing project
