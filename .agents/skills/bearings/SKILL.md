@@ -206,7 +206,7 @@ After a signal's disposition is durable as filed work, a captain hold, or a reco
 Do not acknowledge merely because the signal was read.
 For secondmate-owned contributions, handle and acknowledge in that home and use the existing parent channel for any captain call.
 
-When a disposition turns on whether the change fits the project's own values and that project has a `VISION.md`, judge it with the `vision-md-triage-verdict` capability that `tool-source-shelf` owns: a per-rule aligns / does not align / cannot tell verdict with cited evidence, where any cannot-tell blocks an auto-merge and returns to the ordinary captain call rather than being coerced into a verdict.
+When a disposition turns on whether the change fits the project's own values and that project has a `VISION.md`, judge it with the `vision-md-triage-verdict` capability that `tool-source-shelf` owns, and take a disposition that capability leaves unresolved to the ordinary captain call rather than coercing one.
 
 ## Supervision discipline
 

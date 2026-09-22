@@ -323,7 +323,7 @@ Treat file or subsystem overlap as a risk signal rather than an automatic reason
 Serialize only for a true semantic dependency, shared mutable external state, incompatible concurrent migration, or another concrete condition that makes independent progress or reconciliation unsafe; same-file editing alone is insufficient, and genuine blockers remain durable.
 Write the task-specific brief under section 11 before spawning.
 Fill the task subsections according to section 11.
-Two worker capabilities are available when a task calls for them and `tool-source-shelf` owns how to reach each: a spawn hint that a worker facing a hard design decision or a nasty bug may consult `/kun`, and, for a bounded and clearly verifiable improvement run the captain wants driven unattended, driving a `gnhf` loop in Companion mode instead of an ordinary crewmate.
+Two worker capabilities are available when a task calls for them and `tool-source-shelf` owns how to reach each: a spawn hint that a worker facing a hard design decision or a nasty bug may consult `/kun`, and, for an improvement run the captain wants driven autonomously, a crewmate spawned the ordinary way driving a `gnhf` loop inside its own task worktree.
 
 ### Dispatch and supervision handoff
 

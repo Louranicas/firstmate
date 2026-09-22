@@ -54,8 +54,8 @@ Default it off for every project and every posture, and enable it only on the ca
 
 ## Acceptance policy
 
-A project's `VISION.md` is its testable accept-or-resist policy, and it is what a VISION-gated auto-merge and contribution triage read.
-When a project needs one or should refine an existing one, use the `vision` capability, and judge a contribution or an auto-merge candidate against it with the `vision-md-triage-verdict` capability; `tool-source-shelf` owns both, including how to invoke them.
+A project's `VISION.md` is its testable accept-or-resist policy.
+When a project needs one or should refine an existing one, use the `vision` capability that `tool-source-shelf` owns, including how to invoke it and how a contribution is judged against the result.
 This is offered guidance, never a required step of adding a project.
 
 ## Add or clone an existing project

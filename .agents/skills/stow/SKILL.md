@@ -16,7 +16,6 @@ This skill writes only through the existing Firstmate ownership and write bounda
 
 This pass distills the current session by hand.
 For cross-session, evidence-gated maintenance of a memory surface driven from many past transcripts at once, the `backpass` capability that `tool-source-shelf` owns is the complement: it proposes edits and never writes until a human accepts them, and a proposed edit to firstmate's own tracked `AGENTS.md` or skills still ships through the normal PR path.
-It complements this pass rather than replacing it.
 
 ## Memory tiers and entry markers
 
