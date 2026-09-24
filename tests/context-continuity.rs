@@ -909,3 +909,70 @@ fn native_config_cli_refuses_links_and_keeps_dry_run_nonmutating() -> Result<()>
     assert!(!backup.exists());
     Ok(())
 }
+
+fn changed_selection(extra: &str) -> Result<std::process::Output> {
+    let repo = tempfile::tempdir()?;
+    let root = repo.path();
+    let git = |args: &[&str]| -> Result<()> {
+        let status = Command::new("git")
+            .current_dir(root)
+            .env("GIT_CONFIG_GLOBAL", "/dev/null")
+            .env("GIT_CONFIG_NOSYSTEM", "1")
+            .args([
+                "-c",
+                "user.name=fixture",
+                "-c",
+                "user.email=fixture@invalid",
+            ])
+            .args(args)
+            .status()?;
+        anyhow::ensure!(status.success(), "git {args:?} failed");
+        Ok(())
+    };
+    git(&["init", "-q"])?;
+    git(&["commit", "-q", "--allow-empty", "-m", "base"])?;
+    fs::create_dir_all(root.join("bin"))?;
+    fs::copy(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../bin/fm-test-run.sh"),
+        root.join("bin/fm-test-run.sh"),
+    )?;
+    for path in [
+        "rust/context-continuity/Cargo.toml",
+        "rust/context-continuity/src/lib.rs",
+        "tests/context-continuity.rs",
+        extra,
+    ] {
+        let file = root.join(path);
+        fs::create_dir_all(file.parent().unwrap_or(root))?;
+        fs::write(file, "")?;
+    }
+    git(&["add", "-A"])?;
+    git(&["commit", "-q", "-m", "change"])?;
+    Ok(Command::new("bash")
+        .current_dir(root)
+        .arg("bin/fm-test-run.sh")
+        .args(["--list", "--changed", "--base", "HEAD~1"])
+        .output()?)
+}
+
+#[test]
+fn changed_runner_routes_only_this_crate_and_refuses_unknown_rust_paths() -> Result<()> {
+    let routed = changed_selection("README.md")?;
+    assert!(
+        routed.status.success(),
+        "{}",
+        String::from_utf8_lossy(&routed.stderr)
+    );
+    for unknown in ["tests/other.rs", "rust/other/src/lib.rs"] {
+        let refused = changed_selection(unknown)?;
+        assert!(!refused.status.success(), "{unknown} was accepted");
+        assert!(
+            String::from_utf8_lossy(&refused.stderr).contains(&format!(
+                "no changed-test mapping for source path: {unknown}"
+            )),
+            "{unknown}: {}",
+            String::from_utf8_lossy(&refused.stderr)
+        );
+    }
+    Ok(())
+}

@@ -1661,6 +1661,8 @@ families_for_changed_path() {
           || printf '%s\n' "__unmapped__:$path"
       fi
       ;;
+    rust/context-continuity/*|tests/context-continuity.rs)
+      ;;
     tests/*)
       printf '%s\n' "__unmapped__:$path"
       ;;
