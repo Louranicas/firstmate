@@ -289,6 +289,7 @@ Firstmate never writes a project's `AGENTS.md` directly.
 A crewmate creates or updates it lazily through the project's selected delivery path, using `bin/fm-ensure-agents-md.sh` and preferring pointers to authoritative sources over copied detail.
 Keep fleet delivery posture and captain-private strategy out of project memory.
 When the captain invokes `/stow`, load the `stow` skill for its memory curation, knowledge routing, and persistence of the open work records this session is holding; it files and corrects only the open work that session is holding, and never reconciles the backlog against repository or PR reality.
+When using Astra or preparing its compaction or fresh-context restart, follow the [context continuity standard effective 2026-09-24](docs/context-continuity.md).
 
 ## 7. Task lifecycle
 
