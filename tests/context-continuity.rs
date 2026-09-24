@@ -5,9 +5,11 @@ use fm_context_continuity::*;
 use rusqlite::Connection;
 use std::{
     fs,
+    io::{BufRead, BufReader},
     os::unix::fs::{MetadataExt, PermissionsExt, symlink},
     path::PathBuf,
     process::{Command, Stdio},
+    sync::mpsc,
     time::Duration,
 };
 use tempfile::TempDir;
@@ -435,7 +437,7 @@ fn crash_child() -> Result<()> {
     };
     let conn = Connection::open(&path)?;
     conn.execute_batch("BEGIN IMMEDIATE; INSERT INTO checkpoints VALUES('crash','{}','bad');")?;
-    fs::write(format!("{path}.ready"), b"uncommitted")?;
+    println!("FM_CONTINUITY_CRASH_READY");
     std::thread::sleep(Duration::from_secs(30));
     anyhow::bail!("crash fixture was not killed")
 }
@@ -446,20 +448,33 @@ fn actual_process_crash_rolls_back_and_lock_is_recoverable() -> Result<()> {
     let mut child = Command::new(std::env::current_exe()?)
         .args(["--exact", "crash_child", "--nocapture"])
         .env("FM_CONTINUITY_CRASH_DB", &path)
-        .stdout(Stdio::null())
+        .stdout(Stdio::piped())
         .spawn()?;
-    let ready = PathBuf::from(format!("{}.ready", path.display()));
-    for _ in 0..100 {
-        if ready.exists() {
-            break;
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| anyhow::anyhow!("child stdout missing"))?;
+    let (ready, signal) = mpsc::channel();
+    std::thread::spawn(move || {
+        for line in BufReader::new(stdout).lines().map_while(Result::ok) {
+            if line.contains("FM_CONTINUITY_CRASH_READY") {
+                let _ = ready.send(());
+            }
         }
-        std::thread::sleep(Duration::from_millis(20));
-    }
-    let observed = ready.exists();
+    });
+    let observed = signal.recv_timeout(Duration::from_secs(60));
+    let exited_early = child.try_wait()?;
     child.kill()?;
     child.wait()?;
-    assert!(observed);
-    fs::remove_file(ready)?;
+    match observed {
+        Ok(()) => {}
+        Err(mpsc::RecvTimeoutError::Timeout) => {
+            anyhow::bail!("crash child held no uncommitted write within 60 seconds")
+        }
+        Err(mpsc::RecvTimeoutError::Disconnected) => {
+            anyhow::bail!("crash child exited before its uncommitted write: {exited_early:?}")
+        }
+    }
     let mut db = f.open()?;
     assert!(db.validate("crash", &f.cp.identity, now()?).is_err());
     db.capture(&f.cp, now()?)?;
