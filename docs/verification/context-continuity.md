@@ -17,12 +17,12 @@ bin/fm-doc-audience-check.sh
 bin/fm-lint.sh
 ```
 
-On 2026-09-24 with Rust 1.98.0, the behavior suite reported `23 passed; 0 failed`.
+On 2026-09-24 with Rust 1.98.0, the behavior suite reported `24 passed; 0 failed`.
 It exercises the public library and CLI, with corruption planted in SQLite through an independent connection.
 The crash case kills a real child process after an uncommitted write and verifies rollback before a successful retry.
-Concurrent process/thread cases demonstrate refusal while a writer owns the lock and successful recovery afterward.
+A second in-process opener and a separate CLI process are both refused while a writer owns the lock, and a reopen succeeds after it releases.
 Other negative controls cover stale source bytes, expired/future checkpoints, oversized retrieval, duplicate obligations, symlinks/traversal, secrets, incompatible model/host/backend/pane/thread identities, changed legacy consent/provenance, replay and receipt corruption, uncertain effects, backup collisions, schema incompatibility, and missing/stale/cumulative telemetry.
-The launcher dry run runs with an empty `PATH`, so it cannot silently invoke Codex.
+The launcher dry runs use an empty `PATH`, so they cannot silently invoke Codex; one confirms a dash-led prompt is passed after a `--` option terminator.
 Native config controls cover dry-run nonmutation, exact preservation of all original bytes, private backup, atomic replacement and rollback, stale preimages, later edits, wrong backup hashes, existing threshold/profile conflicts, model mismatch, lock contention and symlink refusal.
 
 ## Native refresh procedure
