@@ -31,7 +31,7 @@ The probe and journal do not attach to or reset an existing primary, worker, or 
 ## Build and start
 
 The optional tool requires Rust 1.88 or newer and a Unix filesystem with SQLite locking and durable file synchronization.
-It adds no service or background watcher and changes no existing launch adapter or global Codex configuration.
+It adds no service or background watcher; native configuration adoption is an explicit owner-coordinated command.
 Build it from the repository root:
 
 ```sh
@@ -50,6 +50,14 @@ The native top-level compaction keys are process-wide: changing the selected mod
 Adding them globally therefore also affects new sessions that explicitly select another model; Astra-only adoption needs a model-aware launch owner or a separately scoped runtime.
 An unselected profile or an optional launcher alone is not evidence that existing launch paths adopted the policy.
 Keep machine-specific target paths, hashes and rollback receipts in the private deployment record.
+
+`config-adopt` takes an explicit absolute `config.toml`, an unused private backup beside it, and the expected preimage SHA-256.
+It defaults to a dry run, requires the existing default model to be Astra, and refuses any existing threshold or profile policy.
+With `--apply`, it locks the current file, verifies its bytes and inode, writes and verifies the exclusive backup, and atomically replaces the file with the two native settings prepended outside existing tables.
+Every original byte is preserved; receipts contain hashes and selected policy fields, never full configuration text.
+Coordinate this short operation with the config owner because native editors need not honor its advisory lock.
+`config-rollback` also defaults to a dry run and restores only when both supplied digests match and no later config edits occurred.
+Neither command resets a process; verify ambient effective configuration in a newly owned native process after adoption.
 
 ## Checkpoint and fresh-context protocol
 

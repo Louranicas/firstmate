@@ -17,12 +17,13 @@ bin/fm-doc-audience-check.sh
 bin/fm-lint.sh
 ```
 
-On 2026-09-24 with Rust 1.98.0, the behavior suite reported `20 passed; 0 failed`.
+On 2026-09-24 with Rust 1.98.0, the behavior suite reported `23 passed; 0 failed`.
 It exercises the public library and CLI, with corruption planted in SQLite through an independent connection.
 The crash case kills a real child process after an uncommitted write and verifies rollback before a successful retry.
 Concurrent process/thread cases demonstrate refusal while a writer owns the lock and successful recovery afterward.
 Other negative controls cover stale source bytes, expired/future checkpoints, oversized retrieval, duplicate obligations, symlinks/traversal, secrets, incompatible model/host/backend/pane/thread identities, changed legacy consent/provenance, replay and receipt corruption, uncertain effects, backup collisions, schema incompatibility, and missing/stale/cumulative telemetry.
 The launcher dry run runs with an empty `PATH`, so it cannot silently invoke Codex.
+Native config controls cover dry-run nonmutation, exact preservation of all original bytes, private backup, atomic replacement and rollback, stale preimages, later edits, wrong backup hashes, existing threshold/profile conflicts, model mismatch, lock contention and symlink refusal.
 
 ## Native refresh procedure
 
@@ -48,6 +49,7 @@ The threshold stimulus adds repeated inert text, verifies provider-reported inpu
 No fixture fabricates a vendor token event or substitutes for that native test.
 Replacing `--threshold-stimulus` with `--config-readback` performs only native configuration reads in three fresh processes: ambient settings, the proposed compaction overrides, and those same overrides with an alternative model.
 It emits selected model/threshold/scope fields and isolated runtime paths; it never copies the user's full configuration or sends a model request.
+The separate `--lower-context-control` mode keeps the threshold at 230000 but supplies a smaller 32000-token context window and bounded inert input, requiring native automatic compaction below 230000 to verify the runtime's lower-window cap.
 
 ## Measured native support
 
@@ -77,3 +79,15 @@ Raw task-specific proof, thread identifiers and filesystem paths belong in the p
 The native configuration control read ambient model `gpt-6-astra` with both compaction keys unset.
 Explicit overrides read back `230000` and `total`; selecting `gpt-6-sol` retained those same compaction overrides.
 This proves the keys are not scoped by model selection, and does not prove that a proposed user-config patch has been deployed.
+
+The separate smaller-window control read back `model_context_window=32000`, threshold 230000 and scope total, while native usage reported a usable window of 30400.
+Its 29589-input-token request was followed by automatic compaction before any manual request, well below the configured 230000 mark.
+The following request still used 29854 input tokens, so another compaction in that constrained scenario is not a valid cumulative-only negative control.
+The full-window experiment above remains the cumulative-only control.
+This observed lower-window cap agrees with the versioned [Codex 0.156.0 model-limit implementation](https://github.com/openai/codex/blob/rust-v0.156.0/codex-rs/protocol/src/openai_models.rs), which caps the configured limit against a known model context window.
+It does not certify arbitrary providers with incorrect or missing context metadata.
+
+After an explicitly authorized native-global configuration adoption, a fresh isolated process read the ambient model as `gpt-6-astra`, threshold 230000 and scope total without compaction overrides.
+The guarded Rust operation verified the original file hash, saved a private backup beside its owner, preserved every existing byte, performed atomic replacement and passed rollback dry-run validation.
+That evidence covers later processes loading the native user configuration; it does not assert adoption by already running or remote app-server processes, other harnesses, or calls supplying higher-precedence overrides.
+Machine-specific configuration and backup paths remain in the private deployment receipt.

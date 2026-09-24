@@ -18,6 +18,23 @@ struct Cli {
 }
 #[derive(Subcommand)]
 enum Command {
+    /// Plan native GLOBAL defaults, refusing existing policy; --apply requires owner-coordinated adoption.
+    ConfigAdopt {
+        target: PathBuf,
+        backup: PathBuf,
+        expected_preimage_sha256: String,
+        #[arg(long)]
+        apply: bool,
+    },
+    /// Restore the exact pre-adoption config only if no later setting changed; dry-run unless --apply.
+    ConfigRollback {
+        target: PathBuf,
+        backup: PathBuf,
+        expected_current_sha256: String,
+        expected_backup_sha256: String,
+        #[arg(long)]
+        apply: bool,
+    },
     /// Create a private journal and migrate to the current schema (backup is reserved).
     Init { store: PathBuf },
     /// Upgrade an older journal after writing a new, exclusive SQLite backup.
@@ -100,6 +117,30 @@ fn emit(value: impl serde::Serialize) -> Result<()> {
 }
 fn run() -> Result<()> {
     match Cli::parse().command {
+        Command::ConfigAdopt {
+            target,
+            backup,
+            expected_preimage_sha256,
+            apply,
+        } => emit(fm_context_continuity::config::adopt(
+            &target,
+            &backup,
+            &expected_preimage_sha256,
+            apply,
+        )?),
+        Command::ConfigRollback {
+            target,
+            backup,
+            expected_current_sha256,
+            expected_backup_sha256,
+            apply,
+        } => emit(fm_context_continuity::config::rollback(
+            &target,
+            &backup,
+            &expected_current_sha256,
+            &expected_backup_sha256,
+            apply,
+        )?),
         Command::Init { store } => {
             let mut db = Store::open(&store, true)?;
             db.migrate(&store.join("before-v2.sqlite3"))?;

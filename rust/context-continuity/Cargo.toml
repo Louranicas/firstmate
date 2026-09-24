@@ -14,9 +14,8 @@ rusqlite = { version = "0.37", features = ["bundled", "backup", "limits"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
-
-[dev-dependencies]
 tempfile = "3"
+toml = "0.8"
 
 [lints.rust]
 unsafe_code = "forbid"
@@ -24,6 +23,7 @@ unsafe_code = "forbid"
 [lints.clippy]
 unwrap_used = "deny"
 expect_used = "deny"
+
 [[test]]
 name = "continuity"
 path = "../../tests/context-continuity.rs"
