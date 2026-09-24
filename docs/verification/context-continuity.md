@@ -17,7 +17,7 @@ bin/fm-doc-audience-check.sh
 bin/fm-lint.sh
 ```
 
-On 2026-09-24 with Rust 1.98.0, the behavior suite reported `30 passed; 0 failed`.
+On 2026-09-24 with Rust 1.98.0, the behavior suite reported `31 passed; 0 failed`.
 It exercises the public library and CLI, with corruption planted in SQLite through an independent connection.
 The crash case waits for a real child process to report its uncommitted write on stdout, kills it, and verifies rollback before a successful retry.
 A second in-process opener and a separate CLI process are both refused while a writer owns the lock, and a reopen succeeds after it releases.
@@ -25,6 +25,7 @@ Other negative controls cover stale source bytes, expired/future checkpoints, ov
 Identity CLI controls preserve letter-bearing public IDs, exercise `9/A` and `Z/0/11` transitions and the maximum native integer boundary, and reject invalid alphabet, case, syntax and overflow.
 They also exercise explicit session input with an absent environment value, matching inputs, refusal of disagreement, and refusal when neither is supplied.
 These portable fixtures prove parsing and disagreement checks, not live session ownership; [the policy](../context-continuity.md#build-and-start) routes ownership verification to the existing native backend.
+A disposable Git fixture runs `bin/fm-test-run.sh --list --changed` to confirm it accepts changes to this crate and its test file, and still refuses another Rust test file or crate.
 The launcher dry runs use an empty `PATH`, so they cannot silently invoke Codex; one confirms a dash-led prompt is passed after a `--` option terminator.
 Native config controls cover dry-run nonmutation, exact preservation of all original bytes, private backup, atomic replacement and rollback, stale preimages, later edits, wrong backup hashes, existing threshold/profile conflicts, model mismatch, lock contention and symlink refusal.
 
