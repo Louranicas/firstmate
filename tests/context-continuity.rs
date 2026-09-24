@@ -515,6 +515,29 @@ fn launch_dry_run_pins_full_context_policy_and_never_starts_codex() -> Result<()
 }
 
 #[test]
+fn launch_dry_run_passes_dash_led_prompt_after_option_terminator() -> Result<()> {
+    let f = Fixture::new()?;
+    let prompt = f.root.join("prompt.md");
+    let text = "---\n- resume from checkpoint\n";
+    fs::write(&prompt, text)?;
+    let output = Command::new(env!("CARGO_BIN_EXE_fm-context-continuity"))
+        .args(["launch", "--dry-run", "--cwd"])
+        .arg(&f.root)
+        .arg("--prompt-file")
+        .arg(&prompt)
+        .env("PATH", "")
+        .output()?;
+    assert!(output.status.success());
+    let value: serde_json::Value = serde_json::from_slice(&output.stdout)?;
+    let args = value["args"]
+        .as_array()
+        .ok_or_else(|| anyhow::anyhow!("args missing"))?;
+    let tail = &args[args.len() - 2..];
+    assert_eq!(tail, [serde_json::json!("--"), serde_json::json!(text)]);
+    Ok(())
+}
+
+#[test]
 fn native_config_adoption_and_rollback_preserve_every_other_byte() -> Result<()> {
     let temp = tempfile::tempdir()?;
     let target = temp.path().join("config.toml");

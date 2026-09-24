@@ -285,6 +285,7 @@ fn run() -> Result<()> {
                 cwd.to_string_lossy().into_owned(),
             ];
             if let Some(file) = prompt_file {
+                args.push("--".into());
                 args.push(String::from_utf8(read_bounded(
                     &file,
                     fm_context_continuity::MAX_REPLAY,
