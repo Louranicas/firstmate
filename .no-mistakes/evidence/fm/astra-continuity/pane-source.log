@@ -1,0 +1,18 @@
+HERDR_SESSION=fm-lab-continuity-3418411-20113 HERDR_PANE_ID=w1:p1
+{"schema":2}
+identity rc=0
+{"host":"orac","root":"/var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/lab-root","backend":"herdr","session":"fm-lab-continuity-3418411-20113","pane":"w1:p1","terminal":"term_65c351538f4ff1","thread":"thread-source","model":"gpt-6-astra"}
+draft rc=0
+--- capture unreviewed draft (must refuse)
+continuity: explicit secret review required
+rc=1
+--- capture reviewed
+{"id":"cp-lab-1","sha256":"7493b695ad02374223e8d72344d3694bf4569b3167a32b9ec33fa987e09da5a9"}
+rc=0
+--- idempotent retry
+{"id":"cp-lab-1","sha256":"7493b695ad02374223e8d72344d3694bf4569b3167a32b9ec33fa987e09da5a9"}
+rc=0
+--- validate
+{"id":"cp-lab-1","valid":true}
+rc=0
+SOURCE_DONE

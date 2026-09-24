@@ -1,0 +1,9 @@
+user_version before: 1
+$ (cwd=/var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/migrate-1TsH) fm-context-continuity migrate v1store pre-v2.sqlite3
+{"schema":2}
+rc=0
+-rw-------. 12288 pre-v2.sqlite3
+backup user_version: 1
+$ migrate again (already current; no-op)
+{"schema":2}
+rc=0

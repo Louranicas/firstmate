@@ -1,0 +1,5 @@
+# user notes
+model = "gpt-6-astra"
+
+[mcp_servers.x]
+command = "y"

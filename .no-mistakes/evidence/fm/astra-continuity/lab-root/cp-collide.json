@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "id": "cp-lab-1",
+  "created_at": 1790232950,
+  "expires_at": 1790236550,
+  "identity": {
+    "host": "orac",
+    "root": "/var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/lab-root",
+    "backend": "herdr",
+    "session": "fm-lab-continuity-3418411-20113",
+    "pane": "w1:p1",
+    "terminal": "term_65c351538f4ff1",
+    "thread": "thread-source",
+    "model": "gpt-6-astra"
+  },
+  "intent": "different work",
+  "scope": "Herdr lab only",
+  "completed": [
+    "journal built"
+  ],
+  "decisions": [
+    "no live restart"
+  ],
+  "next_action": "Verify replay in fresh pane",
+  "obligations": [
+    {
+      "id": "deliver-proof",
+      "state": "open",
+      "description": "Publish verified proof",
+      "owner": "supervisor"
+    }
+  ],
+  "effects": [
+    {
+      "id": "publish-proof",
+      "intent_sha256": "dcefb723b927f0ca898e8e3b6e778ad245d6d787fd4a8f3e7c0f17505a973823",
+      "state": "prepared",
+      "receipt_sha256": null
+    }
+  ],
+  "sources": [
+    {
+      "path": "handoff.md",
+      "sha256": "b340733b714e4de32905337ebf3d28915d522316a33c6e80d15c310a84259b14"
+    }
+  ],
+  "navigation": [],
+  "legacy": null,
+  "reviewed_for_secrets": true
+}

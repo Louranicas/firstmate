@@ -1,0 +1,3 @@
+Louranicas@orac:~/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/lab-root$ /var/home/Louranicas/.no-mistakes/evidence/
+01M392CXM7NMXS287F008QRNDX/pane-target.sh term_65c3516171c472
+Louranicas@orac:~/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/lab-root$

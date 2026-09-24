@@ -1,0 +1,17 @@
+{
+  "identity": {
+    "host": "orac",
+    "root": "/var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/lab-root",
+    "backend": "herdr",
+    "session": "fm-lab-continuity-3418411-20113",
+    "pane": "w1:p1",
+    "terminal": "term_65c351538f4ff1",
+    "thread": "thread-source",
+    "model": "gpt-6-astra"
+  },
+  "observed_at": 1790229384,
+  "semantics": "active_context",
+  "tokens": 231000,
+  "runtime_version": "x",
+  "compact_supported": true
+}

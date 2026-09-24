@@ -1,0 +1,81 @@
+=== A1 identity outside any Herdr pane
+$ env -u HERDR_SESSION -u HERDR_PANE_ID /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity identity --host orac --root /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/lab-root --thread t --terminal term_x1
+continuity: HERDR_SESSION absent; run inside the intended native pane: environment variable not found
+rc=1
+=== A2 Zellij-style numeric pane id refused
+$ env HERDR_SESSION=fm-lab-x HERDR_PANE_ID=3 /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity identity --host orac --root /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/lab-root --thread t --terminal term_x1
+continuity: native Herdr pane and terminal incarnation required
+rc=1
+=== A3 non-Astra model refused
+$ env HERDR_SESSION=fm-lab-x HERDR_PANE_ID=w1:p1 /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity identity --host orac --root /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/lab-root --thread t --terminal term_x1 --model gpt-6-sol
+continuity: model mismatch: Astra required
+rc=1
+=== A4 replay to different host refused
+$ /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity replay /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/lab-root/store cp-lab-1 id-src.json id-other.json
+continuity: destination identity mismatch
+rc=1
+=== A5 secret in reviewed checkpoint refused
+$ /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity checkpoint /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/lab-root/store cp-secret.json
+continuity: suspected secret: omit it and reference its owner
+rc=1
+=== A6 immutable id collision refused
+$ /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity checkpoint /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/lab-root/store cp-collide.json
+continuity: checkpoint ID collision; immutable IDs cannot be overwritten
+rc=1
+=== A7 stale source after handoff edit
+$ /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity validate /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/lab-root/store cp-lab-1 id-src.json
+continuity: stale source: handoff.md
+rc=1
+$ /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity replay /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/lab-root/store cp-lab-1 id-src.json id-other2.json
+rc=1
+$ /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity validate /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/lab-root/store cp-lab-1 id-src.json
+{"id":"cp-lab-1","valid":true}
+rc=0
+=== A8 bare relative backup + migrate (child cwd = store parent)
+$ /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity backup store b.sqlite3
+{"backup":"b.sqlite3"}
+rc=0
+-rw-------
+$ /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity backup store b.sqlite3
+continuity: File exists (os error 17)
+rc=1
+$ /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity migrate store m.sqlite3
+{"schema":2}
+rc=0
+ls: cannot access 'm.sqlite3': No such file or directory
+=== A9 restore to new private dir, never activated
+$ /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity restore /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/lab-root/b.sqlite3 /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/lab-root/restored
+{"activated":false,"restored":"/var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/lab-root/restored"}
+rc=0
+$ /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity validate /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/lab-root/restored cp-lab-1 id-src.json
+{"id":"cp-lab-1","valid":true}
+rc=0
+=== L1 launch dry-run with dash-led prompt, empty PATH
+$ env PATH= /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity launch --cwd /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/lab-root --prompt-file prompt.md --dry-run
+{"activated":false,"args":["--model","gpt-6-astra","-c","model_auto_compact_token_limit=230000","-c","model_auto_compact_token_limit_scope=\"total\"","--cd","/var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/lab-root","--","- resume at obligation deliver-proof\n"],"program":"codex"}
+rc=0
+=== T telemetry classification
+-- active_context 231000 true
+{"action":"checkpoint_then_request_compaction","checkpoint_mark":220000,"compaction_executed":false,"exact_signal":true,"runtime_version":"codex-cli 0.156.0","threshold":230000}
+rc=0
+-- active_context 231000 false
+{"action":"checkpoint_then_fresh_thread_required","checkpoint_mark":220000,"compaction_executed":false,"exact_signal":true,"runtime_version":"codex-cli 0.156.0","threshold":230000}
+rc=0
+-- active_context 225000 true
+{"action":"checkpoint_now","checkpoint_mark":220000,"compaction_executed":false,"exact_signal":true,"runtime_version":"codex-cli 0.156.0","threshold":230000}
+rc=0
+-- active_context 100000 true
+{"action":"below_checkpoint_mark","checkpoint_mark":220000,"compaction_executed":false,"exact_signal":true,"runtime_version":"codex-cli 0.156.0","threshold":230000}
+rc=0
+-- last_request 243589 true
+{"action":"checkpoint_now_estimate_only","checkpoint_mark":220000,"compaction_executed":false,"exact_signal":false,"runtime_version":"codex-cli 0.156.0","threshold":230000}
+rc=0
+-- cumulative 525827 true
+{"action":"telemetry_gap_checkpoint_at_safe_boundary","checkpoint_mark":220000,"compaction_executed":false,"exact_signal":false,"runtime_version":"codex-cli 0.156.0","threshold":230000}
+rc=0
+-- unknown null true
+{"action":"telemetry_gap_checkpoint_at_safe_boundary","checkpoint_mark":220000,"compaction_executed":false,"exact_signal":false,"runtime_version":"codex-cli 0.156.0","threshold":230000}
+rc=0
+-- stale active_context 231000
+continuity: stale telemetry
+rc=1

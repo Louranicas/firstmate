@@ -1,0 +1,60 @@
+=== C1 dry run (default) is non-mutating
+$ /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity config-adopt /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/config.toml /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/config.toml.bak 55bb3b781fb5018cc71397f982bcc6d1a6e81b66f1a291e3c95b83a6a1d6b7ed
+{"after_sha256":"ae51de6e23f2a7a445a6382bc145803d71c6c0743c2af22057010188341ac889","applied":false,"backup":"/var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/config.toml.bak","before_sha256":"55bb3b781fb5018cc71397f982bcc6d1a6e81b66f1a291e3c95b83a6a1d6b7ed","model":"gpt-6-astra","operation":"native-global-policy","other_bytes_unchanged":true,"running_sessions_reset":false,"scope":"total","target":"/var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/config.toml","threshold":230000}
+rc=0
+hash unchanged: yes
+ls: cannot access 'config.toml.bak': No such file or directory
+=== C2 stale preimage refused
+$ /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity config-adopt /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/config.toml /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/config.toml.bak 2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881 --apply
+continuity: config preimage hash changed; nothing replaced
+rc=1
+=== C3 apply
+$ /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity config-adopt /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/config.toml /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/config.toml.bak 55bb3b781fb5018cc71397f982bcc6d1a6e81b66f1a291e3c95b83a6a1d6b7ed --apply
+{"after_sha256":"ae51de6e23f2a7a445a6382bc145803d71c6c0743c2af22057010188341ac889","applied":true,"backup":"/var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/config.toml.bak","before_sha256":"55bb3b781fb5018cc71397f982bcc6d1a6e81b66f1a291e3c95b83a6a1d6b7ed","model":"gpt-6-astra","operation":"native-global-policy","other_bytes_unchanged":true,"running_sessions_reset":false,"scope":"total","target":"/var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/config.toml","threshold":230000}
+rc=0
+--- new config:
+# Astra continuity policy, effective 2026-09-24; applies to new native Codex sessions.
+model_auto_compact_token_limit = 230000
+model_auto_compact_token_limit_scope = "total"
+
+# user notes
+model = "gpt-6-astra"
+
+[mcp_servers.x]
+command = "y"
+--- original bytes preserved as suffix: yes
+600 config.toml.bak
+=== C4 re-adopt refused (existing threshold)
+$ /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity config-adopt /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/config.toml /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/config2.bak ae51de6e23f2a7a445a6382bc145803d71c6c0743c2af22057010188341ac889
+continuity: existing threshold/profile policy; refuse replacement
+rc=1
+=== C5 rollback dry run then apply
+$ /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity config-rollback /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/config.toml /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/config.toml.bak ae51de6e23f2a7a445a6382bc145803d71c6c0743c2af22057010188341ac889 55bb3b781fb5018cc71397f982bcc6d1a6e81b66f1a291e3c95b83a6a1d6b7ed
+{"after_sha256":"55bb3b781fb5018cc71397f982bcc6d1a6e81b66f1a291e3c95b83a6a1d6b7ed","applied":false,"backup":"/var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/config.toml.bak","before_sha256":"ae51de6e23f2a7a445a6382bc145803d71c6c0743c2af22057010188341ac889","operation":"native-global-policy-rollback","running_sessions_reset":false,"target":"/var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/config.toml"}
+rc=0
+$ /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity config-rollback /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/config.toml /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/config.toml.bak ae51de6e23f2a7a445a6382bc145803d71c6c0743c2af22057010188341ac889 55bb3b781fb5018cc71397f982bcc6d1a6e81b66f1a291e3c95b83a6a1d6b7ed --apply
+{"after_sha256":"55bb3b781fb5018cc71397f982bcc6d1a6e81b66f1a291e3c95b83a6a1d6b7ed","applied":true,"backup":"/var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/config.toml.bak","before_sha256":"ae51de6e23f2a7a445a6382bc145803d71c6c0743c2af22057010188341ac889","operation":"native-global-policy-rollback","running_sessions_reset":false,"target":"/var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/config.toml"}
+rc=0
+restored exact: yes
+=== C6 non-Astra default model refused
+$ /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity config-adopt /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/sol.toml /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/sol.bak 08cebab1eeec5231e85490cea56484949d07efe940278c342e1fbda59668e9cd
+continuity: explicit absolute config.toml target required
+rc=1
+=== G legacy injection DB (synthetic quiescent snapshot)
+$ /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity legacy /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/injection.db 1
+{"database":"/var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/injection.db","row_id":1,"row_sha256":"29b35d3ec0f90c41ddf87bf7f5463dcd36c83ddc46bf29befa74fd2afdafa532"}
+rc=0
+$ /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity legacy /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/injection.db 2
+continuity: legacy checkpoint is not consented for emission
+rc=1
+0
+legacy db unmodified: yes
+--- nonempty WAL present
+$ /var/home/Louranicas/.no-mistakes/worktrees/c1edd232ccb5/01M392CXM7NMXS287F008QRNDX/rust/context-continuity/target/release/fm-context-continuity legacy /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/cfg-zYrj/injection.db 1
+continuity: legacy adapter requires a quiescent snapshot, not a live database
+rc=1
+=== C6b non-Astra default model refused
+$ config-adopt /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/sol-b4ZE/config.toml /var/home/Louranicas/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/sol-b4ZE/config.toml.bak <sha> --apply
+continuity: default model is not Astra
+rc=1
+model = "gpt-6-sol"

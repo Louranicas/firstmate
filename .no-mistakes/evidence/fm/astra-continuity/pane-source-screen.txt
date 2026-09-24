@@ -1,0 +1,4 @@
+Louranicas@orac:~/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/lab-root$ /var/home/Louranicas/.no-mistakes/evidence
+/01M392CXM7NMXS287F008QRNDX/pane-source.sh term_65c351538f4ff1; echo PANE1_EXIT
+PANE1_EXIT
+Louranicas@orac:~/.no-mistakes/evidence/01M392CXM7NMXS287F008QRNDX/lab-root$

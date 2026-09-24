@@ -1,0 +1,29 @@
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test crash_child ... ok
+test native_config_cli_refuses_links_and_keeps_dry_run_nonmutating ... ok
+test checkpoint_retry_does_not_regress_a_later_receipt ... ok
+test launch_dry_run_pins_full_context_policy_and_never_starts_codex ... ok
+test launch_dry_run_passes_dash_led_prompt_after_option_terminator ... ok
+test cli_roundtrip_uses_public_executable ... ok
+test bounds_fail_whole_instead_of_losing_obligations ... ok
+test changing_effect_after_prepare_requires_new_checkpoint ... ok
+test actual_process_crash_rolls_back_and_lock_is_recoverable ... ok
+test legacy_bridge_is_bounded_consent_preserving_and_provenance_only ... ok
+test checkpoint_replay_ack_roundtrip_and_obligations ... ok
+test telemetry_never_confuses_cumulative_with_active_context ... ok
+test unknown_schema_foreign_db_and_unsafe_store_refuse ... ok
+test source_digest_and_stored_body_corruption_are_rejected ... ok
+test stale_source_expiry_and_future_clock_refuse_replay ... ok
+test secret_and_traversal_controls_fail_without_writing ... ok
+test replay_and_receipt_corruption_negative_controls ... ok
+test sqlite_backup_restore_and_migration_are_non_destructive ... ok
+test native_config_adoption_and_rollback_preserve_every_other_byte ... ok
+test cli_backup_and_migrate_accept_bare_relative_destination ... ok
+test immutable_collision_and_wrong_ack_are_rejected ... ok
+test changed_identity_model_backend_and_thread_are_rejected ... ok
+test effect_receipts_are_monotonic_and_duplicate_intents_do_not_execute ... ok
+test native_config_refuses_conflicts_stale_bytes_and_lock_contention ... ok
+test concurrent_writers_do_not_steal_lock_and_retry_succeeds ... ok
+test result: ok. 25 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.03s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
