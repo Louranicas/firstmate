@@ -391,7 +391,7 @@ impl Legacy {
             consent == "Emit",
             "legacy checkpoint is not consented for emission"
         );
-        // These four owner fields bind provenance, not freshness of any historical claim.
+        // These five owner fields bind provenance, not freshness of any historical claim.
         let row_sha256 = digest(&serde_json::to_vec(&(
             row_id, label, stamp, source, consent,
         ))?);
