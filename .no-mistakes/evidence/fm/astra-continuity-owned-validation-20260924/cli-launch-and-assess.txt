@@ -1,0 +1,36 @@
+## Scenario: Astra launch pins 230000 full-context compaction (dry run, no Codex started)
+$ fm-context-continuity launch --cwd . --dry-run
+{"activated":false,"args":["--model","gpt-6-astra","-c","model_auto_compact_token_limit=230000","-c","model_auto_compact_token_limit_scope=\"total\"","--cd","/tmp/cc-live-01M3960"],"program":"codex"}
+[exit 0]
+$ fm-context-continuity launch --cwd . --prompt-file prompt.md --dry-run
+{"activated":false,"args":["--model","gpt-6-astra","-c","model_auto_compact_token_limit=230000","-c","model_auto_compact_token_limit_scope=\"total\"","--cd","/tmp/cc-live-01M3960","--","-dash-led prompt\n"],"program":"codex"}
+[exit 0]
+## Scenario: assess classifies the 220000 checkpoint / 230000 compaction marks
+# telemetry: semantics=active_context tokens=219999 compact_supported=true
+$ fm-context-continuity assess tel.json identity-a.json
+{"action":"below_checkpoint_mark","checkpoint_mark":220000,"compaction_executed":false,"exact_signal":true,"runtime_version":"lab","threshold":230000}
+[exit 0]
+# telemetry: semantics=active_context tokens=220000 compact_supported=true
+$ fm-context-continuity assess tel.json identity-a.json
+{"action":"checkpoint_now","checkpoint_mark":220000,"compaction_executed":false,"exact_signal":true,"runtime_version":"lab","threshold":230000}
+[exit 0]
+# telemetry: semantics=active_context tokens=230000 compact_supported=true
+$ fm-context-continuity assess tel.json identity-a.json
+{"action":"checkpoint_then_request_compaction","checkpoint_mark":220000,"compaction_executed":false,"exact_signal":true,"runtime_version":"lab","threshold":230000}
+[exit 0]
+# telemetry: semantics=active_context tokens=230000 compact_supported=false
+$ fm-context-continuity assess tel.json identity-a.json
+{"action":"checkpoint_then_fresh_thread_required","checkpoint_mark":220000,"compaction_executed":false,"exact_signal":true,"runtime_version":"lab","threshold":230000}
+[exit 0]
+# telemetry: semantics=cumulative tokens=900000 compact_supported=true
+$ fm-context-continuity assess tel.json identity-a.json
+{"action":"telemetry_gap_checkpoint_at_safe_boundary","checkpoint_mark":220000,"compaction_executed":false,"exact_signal":false,"runtime_version":"lab","threshold":230000}
+[exit 0]
+# telemetry: semantics=last_request tokens=231000 compact_supported=true
+$ fm-context-continuity assess tel.json identity-a.json
+{"action":"checkpoint_now_estimate_only","checkpoint_mark":220000,"compaction_executed":false,"exact_signal":false,"runtime_version":"lab","threshold":230000}
+[exit 0]
+# telemetry: semantics=active_context tokens=null compact_supported=true
+$ fm-context-continuity assess tel.json identity-a.json
+{"action":"telemetry_gap_checkpoint_at_safe_boundary","checkpoint_mark":220000,"compaction_executed":false,"exact_signal":false,"runtime_version":"lab","threshold":230000}
+[exit 0]

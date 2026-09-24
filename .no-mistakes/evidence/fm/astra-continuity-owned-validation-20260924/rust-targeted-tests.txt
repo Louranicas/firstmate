@@ -1,0 +1,13 @@
+## Fixed tree (HEAD 0291e0f)
+test acknowledged_replay_survives_later_effect_confirmation_without_redelivery ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 25 filtered out; finished in 0.01s
+test replay_and_receipt_corruption_negative_controls ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 25 filtered out; finished in 0.01s
+test changing_effect_after_prepare_requires_new_checkpoint ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 25 filtered out; finished in 0.01s
+test legacy_bridge_is_bounded_consent_preserving_and_provenance_only ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 25 filtered out; finished in 0.01s
+test checkpoint_replay_ack_roundtrip_and_obligations ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 25 filtered out; finished in 0.01s
+test cli_roundtrip_uses_public_executable ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 25 filtered out; finished in 0.00s

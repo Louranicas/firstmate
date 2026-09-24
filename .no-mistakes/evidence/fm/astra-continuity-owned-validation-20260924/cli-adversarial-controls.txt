@@ -1,0 +1,30 @@
+## Adversarial: effect changes BEFORE ack must fail closed (no stale prepared body)
+$ fm-context-continuity checkpoint store cp2.json
+{"id":"checkpoint-2","sha256":"703550b87d86943373c83927060cc88049d096fcb7656e042f1e75bc0068745b"}
+[exit 0]
+$ fm-context-continuity replay store checkpoint-2 identity-a.json identity-b.json
+{"sha256":"e5f369d7e51266689757b45a3af900779e75bad1571c0e53620a656610f9cf4e","state":"prepared","body":"{\"checkpoint\":
+[exit 0]
+$ fm-context-continuity effect store eff2.json
+{"executed":false,"recorded":true}
+[exit 0]
+$ fm-context-continuity replay store checkpoint-2 identity-a.json identity-b.json
+continuity: replay integrity or effect state changed; checkpoint again before replay
+[exit 1]
+## Adversarial: wrong destination model / backend refused
+$ fm-context-continuity replay store checkpoint-1 identity-a.json wrong-model.json
+continuity: model mismatch: Astra required
+[exit 1]
+$ fm-context-continuity replay store checkpoint-1 identity-a.json wrong-backend.json
+continuity: unsupported backend; Zellij pane IDs cannot be reused
+[exit 1]
+## Adversarial: source drift after checkpoint refuses validate/replay
+$ fm-context-continuity checkpoint store cp3.json
+{"id":"checkpoint-3","sha256":"9627ef4ef1768aa540d016495ad18857634fb762ddbfd928f6f721ac43100f0f"}
+[exit 0]
+$ fm-context-continuity validate store checkpoint-3 identity-a.json
+continuity: stale source: handoff.md
+[exit 1]
+$ fm-context-continuity replay store checkpoint-3 identity-a.json identity-b.json
+continuity: stale source: handoff.md
+[exit 1]

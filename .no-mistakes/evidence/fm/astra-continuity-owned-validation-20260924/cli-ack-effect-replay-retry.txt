@@ -1,0 +1,48 @@
+## Scenario: checkpoint -> fresh-thread replay -> ack -> later effect confirmation -> replay retry
+$ fm-context-continuity init store
+{"schema":2}
+[exit 0]
+(draft emitted; reviewed fields filled in cp.json)
+--- negative: unreviewed draft cannot be captured
+$ fm-context-continuity checkpoint store unreviewed.json
+continuity: explicit secret review required
+[exit 1]
+$ fm-context-continuity checkpoint store cp.json
+{"id":"checkpoint-1","sha256":"936ce74a389df51276fe9e02e353bd871dd8a78f4ead8061cb3b616b32030b3a"}
+[exit 0]
+$ fm-context-continuity checkpoint store cp.json
+{"id":"checkpoint-1","sha256":"936ce74a389df51276fe9e02e353bd871dd8a78f4ead8061cb3b616b32030b3a"}
+[exit 0]
+$ fm-context-continuity validate store checkpoint-1 identity-a.json
+{"id":"checkpoint-1","valid":true}
+[exit 0]
+--- replay into fresh thread (identity-b)
+$ fm-context-continuity replay store checkpoint-1 identity-a.json identity-b.json
+{"sha256":"213be9470c8ccc6ba34dd8c5de195efd988e7bf4a55c3c94b651cd4fff0eb05d","state":"prepared","body":"{\"checkpoint\":{\"completed\":[\"checkpoint implemented\"],\"created_at\":1790236809,\"decisions\":[\"No live restart\"],\"effects\":[{\"id\":\"publish-lab\",\"intent_sha256\":\"dcefb723b927f0ca898e8e3b6e778ad245d6d787fd4a8f3e7c0f17505a973823\",\"receipt_sha256\":null,\"state\":\"prepared\"}],\
+[exit 0]
+prepared sha=213be9470c8ccc6ba34dd8c5de195efd988e7bf4a55c3c94b651cd4fff0eb05d
+--- retry before ack returns identical bytes
+identical replay bytes: yes
+{"state":"prepared","obligations":["delivery"],"effects":[{"id":"publish-lab","state":"prepared"}]}
+--- negative: wrong ack digest
+$ fm-context-continuity ack store checkpoint-1 identity-b.json 8810ad581e59f2bc3928b261707a71308f7e139eb04820366dc4d5c18d980225
+continuity: no matching prepared delivery
+[exit 1]
+$ fm-context-continuity ack store checkpoint-1 identity-b.json 213be9470c8ccc6ba34dd8c5de195efd988e7bf4a55c3c94b651cd4fff0eb05d
+{"acknowledged":true}
+[exit 0]
+$ fm-context-continuity ack store checkpoint-1 identity-b.json 213be9470c8ccc6ba34dd8c5de195efd988e7bf4a55c3c94b651cd4fff0eb05d
+{"acknowledged":true}
+[exit 0]
+--- effect later confirmed (protocol step 5 reconcile)
+$ fm-context-continuity effect store effect-confirmed.json
+{"executed":false,"recorded":true}
+[exit 0]
+--- replay retry after ack + confirmation (regression fixed in 0291e0f)
+$ fm-context-continuity replay store checkpoint-1 identity-a.json identity-b.json
+{"sha256":"213be9470c8ccc6ba34dd8c5de195efd988e7bf4a55c3c94b651cd4fff0eb05d","state":"acknowledged","body":null}
+[exit 0]
+--- negative: confirmed effect cannot regress
+$ fm-context-continuity effect store effect-regress.json
+continuity: effect state regression refused
+[exit 1]

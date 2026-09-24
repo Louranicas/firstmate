@@ -1,0 +1,5 @@
+## Pre-fix lib.rs (commit 0291e0f one-line fix reversed), same new test
+684:                digest(old_body.as_bytes()) == old_sha && old_sha == hash,
+test acknowledged_replay_survives_later_effect_confirmation_without_redelivery ... FAILED
+Error: replay integrity or effect state changed; checkpoint again before replay
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 25 filtered out; finished in 0.00s

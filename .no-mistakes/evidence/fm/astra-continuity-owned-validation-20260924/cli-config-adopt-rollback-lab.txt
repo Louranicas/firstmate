@@ -1,0 +1,43 @@
+## Scenario: config-adopt on a LAB copy (not the real ~/.codex) — dry-run, apply, rollback
+preimage sha=fd4abe0d004e4c149333fa6c5856d74b58ed5b53a9fb08c7d6af0a9beaf4c017
+$ fm-context-continuity config-adopt /tmp/cc-live-01M3960/lab-codex/config.toml /tmp/cc-live-01M3960/lab-codex/config.before.toml fd4abe0d004e4c149333fa6c5856d74b58ed5b53a9fb08c7d6af0a9beaf4c017
+{"after_sha256":"134a2b73c37a2fca55d8a58fc2ba402db9f3af297ec7428af002113c704c3832","applied":false,"backup":"/tmp/cc-live-01M3960/lab-codex/config.before.toml","before_sha256":"fd4abe0d004e4c149333fa6c5856d74b58ed5b53a9fb08c7d6af0a9beaf4c017","model":"gpt-6-astra","operation":"native-global-policy","other_bytes_unchanged":true,"running_sessions_reset":false,"scope":"total","target":"/tmp/cc-live-01M3960/lab-codex/config.toml","threshold":230000}
+[exit 0]
+(dry run: backup exists? no; file unchanged? yes)
+--- negative: stale preimage digest refused
+$ fm-context-continuity config-adopt /tmp/cc-live-01M3960/lab-codex/config.toml /tmp/cc-live-01M3960/lab-codex/config.before.toml 2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881 --apply
+continuity: config preimage hash changed; nothing replaced
+[exit 1]
+$ fm-context-continuity config-adopt /tmp/cc-live-01M3960/lab-codex/config.toml /tmp/cc-live-01M3960/lab-codex/config.before.toml fd4abe0d004e4c149333fa6c5856d74b58ed5b53a9fb08c7d6af0a9beaf4c017 --apply
+{"after_sha256":"134a2b73c37a2fca55d8a58fc2ba402db9f3af297ec7428af002113c704c3832","applied":true,"backup":"/tmp/cc-live-01M3960/lab-codex/config.before.toml","before_sha256":"fd4abe0d004e4c149333fa6c5856d74b58ed5b53a9fb08c7d6af0a9beaf4c017","model":"gpt-6-astra","operation":"native-global-policy","other_bytes_unchanged":true,"running_sessions_reset":false,"scope":"total","target":"/tmp/cc-live-01M3960/lab-codex/config.toml","threshold":230000}
+[exit 0]
+--- resulting lab config.toml:
+# Astra continuity policy, effective 2026-09-24; applies to new native Codex sessions.
+model_auto_compact_token_limit = 230000
+model_auto_compact_token_limit_scope = "total"
+
+# keep comment
+model = "gpt-6-astra"
+model_reasoning_effort = "high"
+[mcp_servers.fixture]
+fixture_value = "lab-only-value"
+--- negative: re-adopt refuses existing policy
+$ fm-context-continuity config-adopt /tmp/cc-live-01M3960/lab-codex/config.toml /tmp/cc-live-01M3960/lab-codex/second.toml 134a2b73c37a2fca55d8a58fc2ba402db9f3af297ec7428af002113c704c3832
+continuity: existing threshold/profile policy; refuse replacement
+[exit 1]
+--- negative: non-Astra default model refused
+$ fm-context-continuity config-adopt /tmp/cc-live-01M3960/lab-codex/sol.toml /tmp/cc-live-01M3960/lab-codex/sol.bak 08cebab1eeec5231e85490cea56484949d07efe940278c342e1fbda59668e9cd
+continuity: explicit absolute config.toml target required
+[exit 1]
+--- rollback dry run then apply
+$ fm-context-continuity config-rollback /tmp/cc-live-01M3960/lab-codex/config.toml /tmp/cc-live-01M3960/lab-codex/config.before.toml 134a2b73c37a2fca55d8a58fc2ba402db9f3af297ec7428af002113c704c3832 fd4abe0d004e4c149333fa6c5856d74b58ed5b53a9fb08c7d6af0a9beaf4c017
+{"after_sha256":"fd4abe0d004e4c149333fa6c5856d74b58ed5b53a9fb08c7d6af0a9beaf4c017","applied":false,"backup":"/tmp/cc-live-01M3960/lab-codex/config.before.toml","before_sha256":"134a2b73c37a2fca55d8a58fc2ba402db9f3af297ec7428af002113c704c3832","operation":"native-global-policy-rollback","running_sessions_reset":false,"target":"/tmp/cc-live-01M3960/lab-codex/config.toml"}
+[exit 0]
+$ fm-context-continuity config-rollback /tmp/cc-live-01M3960/lab-codex/config.toml /tmp/cc-live-01M3960/lab-codex/config.before.toml 134a2b73c37a2fca55d8a58fc2ba402db9f3af297ec7428af002113c704c3832 fd4abe0d004e4c149333fa6c5856d74b58ed5b53a9fb08c7d6af0a9beaf4c017 --apply
+{"after_sha256":"fd4abe0d004e4c149333fa6c5856d74b58ed5b53a9fb08c7d6af0a9beaf4c017","applied":true,"backup":"/tmp/cc-live-01M3960/lab-codex/config.before.toml","before_sha256":"134a2b73c37a2fca55d8a58fc2ba402db9f3af297ec7428af002113c704c3832","operation":"native-global-policy-rollback","running_sessions_reset":false,"target":"/tmp/cc-live-01M3960/lab-codex/config.toml"}
+[exit 0]
+restored byte-identical to preimage: yes
+--- negative (corrected fixture name): non-Astra default model refused
+$ fm-context-continuity config-adopt /tmp/cc-live-01M3960/lab-sol/config.toml /tmp/cc-live-01M3960/lab-sol/config.before.toml <preimage>
+continuity: default model is not Astra
+[exit 1]
