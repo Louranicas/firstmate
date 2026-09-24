@@ -50,5 +50,8 @@ test:
     Preserve the helper's before/after default-session fleet-state tripwire; missing, stopped, changed, or unreadable default state is a hard failure, not a cleanup warning.
     Never restart or mutate the live default session, production configuration, private production databases, active deployment checkouts, or another task's state.
     Keep new Rust test fixtures inside the isolated run workspace, exclude secrets and private production material from published evidence, and report unsupported or untested behavior honestly.
+    Prefer a throwaway lab for spawn, long-launch, and Claude-path proofs, and tear it down in the same evidence turn.
+    Do not mutate the operator primary checkout, real fleet FM_HOME state, or production credentials, and keep git changes otherwise inside the run worktree.
+    Ship or scout briefs that will drive Herdr lifecycle still require --herdr-lab at scaffold time; these Test-agent instructions are not a substitute for that brief flag.
   evidence:
     store_in_repo: true
