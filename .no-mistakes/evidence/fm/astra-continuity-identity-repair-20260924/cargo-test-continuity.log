@@ -1,0 +1,57 @@
+   Compiling fm-context-continuity v0.1.0 (/var/home/Louranicas/.no-mistakes/worktrees/129c8700f57b/01M399VSYH30GN7MXBEW8QF739/rust/context-continuity)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+     Running unittests src/lib.rs (rust/context-continuity/target/debug/deps/fm_context_continuity-c28e621cc55a60f6)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (rust/context-continuity/target/debug/deps/fm_context_continuity-240fa8a4d0056113)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running ../../tests/context-continuity.rs (rust/context-continuity/target/debug/deps/continuity-e3116591137f99d7)
+
+running 31 tests
+test crash_child ... ok
+test checkpoint_retry_does_not_regress_a_later_receipt ... ok
+test changed_identity_model_backend_and_thread_are_rejected ... ok
+test bounds_fail_whole_instead_of_losing_obligations ... ok
+test actual_process_crash_rolls_back_and_lock_is_recoverable ... ok
+test cli_roundtrip_uses_public_executable ... ok
+test changing_effect_after_prepare_requires_new_checkpoint ... ok
+test checkpoint_replay_ack_roundtrip_and_obligations ... ok
+test acknowledged_replay_survives_later_effect_confirmation_without_redelivery ... ok
+test identity_cli_checks_native_number_boundary ... ok
+test immutable_collision_and_wrong_ack_are_rejected ... ok
+test launch_dry_run_pins_full_context_policy_and_never_starts_codex ... ok
+test launch_dry_run_passes_dash_led_prompt_after_option_terminator ... ok
+test native_config_cli_refuses_links_and_keeps_dry_run_nonmutating ... ok
+test legacy_bridge_is_bounded_consent_preserving_and_provenance_only ... ok
+test identity_cli_requires_unambiguous_session_input ... ok
+test source_digest_and_stored_body_corruption_are_rejected ... ok
+test telemetry_never_confuses_cumulative_with_active_context ... ok
+test stale_source_expiry_and_future_clock_refuse_replay ... ok
+test replay_and_receipt_corruption_negative_controls ... ok
+test identity_cli_preserves_native_letter_ids ... ok
+test unknown_schema_foreign_db_and_unsafe_store_refuse ... ok
+test cli_backup_and_migrate_accept_bare_relative_destination ... ok
+test sqlite_backup_restore_and_migration_are_non_destructive ... ok
+test effect_receipts_are_monotonic_and_duplicate_intents_do_not_execute ... ok
+test native_config_adoption_and_rollback_preserve_every_other_byte ... ok
+test native_config_refuses_conflicts_stale_bytes_and_lock_contention ... ok
+test secret_and_traversal_controls_fail_without_writing ... ok
+test identity_cli_rejects_non_native_spelling ... ok
+test changed_runner_routes_only_this_crate_and_refuses_unknown_rust_paths ... ok
+test concurrent_writers_do_not_steal_lock_and_retry_succeeds ... ok
+
+test result: ok. 31 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.01s
+
+   Doc-tests fm_context_continuity
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
