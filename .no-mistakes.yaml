@@ -36,5 +36,19 @@ commands:
 # Publish each run's test evidence to the orphan no-mistakes/evidence branch linked from the PR.
 # The evidence is not committed to the feature or default branch.
 test:
+  instructions: |
+    For Astra context-continuity validation, all newly authored executable test logic, fixture generators, drivers, and probes must be Rust.
+    Existing repository tests, installed CLI tools, and the existing guarded Herdr helper may be invoked unchanged; do not author Bash, Python, JavaScript, or other non-Rust test drivers.
+    Earlier Bash evidence drivers are historical receipts, not compliant proof for this validation.
+    Read docs/herdr-backend.md and the chosen helper's header before native testing.
+    Use the exact helper path and isolation contract supplied by the task's generated Herdr lab brief.
+    If that task contract is unavailable to this gate, report the missing prerequisite before any Herdr call; do not guess a path or substitute another helper.
+    Set HERDR_LAB_HELPER to that verified helper, generate HERDR_LAB_SESSION with its name command, and install the EXIT teardown trap before provisioning only through the helper.
+    Run every task-specific Herdr command, including inventory and other read-only probes, through the helper's run command for that named non-default session.
+    The helper must supply --session as a Herdr option before any -- delimiter; ambient HERDR_SESSION alone is not isolation.
+    Use only the helper's guarded stop for a deliberate mid-run stop and its teardown for cleanup; never call server-global operations or direct session stop/delete.
+    Preserve the helper's before/after default-session fleet-state tripwire; missing, stopped, changed, or unreadable default state is a hard failure, not a cleanup warning.
+    Never restart or mutate the live default session, production configuration, private production databases, active deployment checkouts, or another task's state.
+    Keep new Rust test fixtures inside the isolated run workspace, exclude secrets and private production material from published evidence, and report unsupported or untested behavior honestly.
   evidence:
     store_in_repo: true
