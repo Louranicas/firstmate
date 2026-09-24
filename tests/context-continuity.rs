@@ -286,6 +286,35 @@ fn changing_effect_after_prepare_requires_new_checkpoint() -> Result<()> {
     Ok(())
 }
 #[test]
+fn acknowledged_replay_survives_later_effect_confirmation_without_redelivery() -> Result<()> {
+    let f = Fixture::new()?;
+    let mut db = f.open()?;
+    db.capture(&f.cp, now()?)?;
+    let r = db.replay(&f.cp.id, &f.cp.identity, &f.target(), now()?)?;
+    db.acknowledge(&f.cp.id, &f.target(), &r.sha256)?;
+    let mut effect = f.cp.effects[0].clone();
+    effect.state = "confirmed".into();
+    effect.receipt_sha256 = Some(digest(b"service-receipt"));
+    db.effect(&effect)?;
+    let retry = db.replay(&f.cp.id, &f.cp.identity, &f.target(), now()?)?;
+    assert_eq!(retry.state, "acknowledged");
+    assert_eq!(retry.sha256, r.sha256);
+    assert!(retry.body.is_none());
+    let conn = Connection::open(f.store.join("journal.sqlite3"))?;
+    conn.execute("UPDATE replays SET body='{}'", [])?;
+    assert!(
+        db.replay(&f.cp.id, &f.cp.identity, &f.target(), now()?)
+            .is_err()
+    );
+    conn.execute("UPDATE effects SET sha=?1", [digest(b"forged-receipt-row")])?;
+    conn.execute("DELETE FROM replays", [])?;
+    assert!(
+        db.replay(&f.cp.id, &f.cp.identity, &f.target(), now()?)
+            .is_err()
+    );
+    Ok(())
+}
+#[test]
 fn sqlite_backup_restore_and_migration_are_non_destructive() -> Result<()> {
     let f = Fixture::new()?;
     let mut db = f.open()?;

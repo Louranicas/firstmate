@@ -17,7 +17,7 @@ bin/fm-doc-audience-check.sh
 bin/fm-lint.sh
 ```
 
-On 2026-09-24 with Rust 1.98.0, the behavior suite reported `25 passed; 0 failed`.
+On 2026-09-24 with Rust 1.98.0, the behavior suite reported `26 passed; 0 failed`.
 It exercises the public library and CLI, with corruption planted in SQLite through an independent connection.
 The crash case waits for a real child process to report its uncommitted write on stdout, kills it, and verifies rollback before a successful retry.
 A second in-process opener and a separate CLI process are both refused while a writer owns the lock, and a reopen succeeds after it releases.

@@ -681,7 +681,7 @@ impl Store {
             .optional()?;
         let reply = if let Some((old_body, old_sha, ack)) = existing {
             ensure!(
-                digest(old_body.as_bytes()) == old_sha && old_sha == hash,
+                digest(old_body.as_bytes()) == old_sha && (ack == 1 || old_sha == hash),
                 "replay integrity or effect state changed; checkpoint again before replay"
             );
             Replay {
