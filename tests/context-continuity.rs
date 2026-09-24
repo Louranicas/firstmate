@@ -537,6 +537,55 @@ fn launch_dry_run_passes_dash_led_prompt_after_option_terminator() -> Result<()>
     Ok(())
 }
 
+fn config_cli(args: &[&std::ffi::OsStr]) -> Result<Result<serde_json::Value, String>> {
+    let output = Command::new(env!("CARGO_BIN_EXE_fm-context-continuity"))
+        .args(args)
+        .output()?;
+    Ok(if output.status.success() {
+        Ok(serde_json::from_slice(&output.stdout)?)
+    } else {
+        Err(String::from_utf8(output.stderr)?)
+    })
+}
+
+fn adopt(
+    target: &std::path::Path,
+    backup: &std::path::Path,
+    expected: &str,
+    apply: bool,
+) -> Result<Result<serde_json::Value, String>> {
+    let mut args = vec![
+        "config-adopt".as_ref(),
+        target.as_os_str(),
+        backup.as_os_str(),
+        expected.as_ref(),
+    ];
+    if apply {
+        args.push("--apply".as_ref());
+    }
+    config_cli(&args)
+}
+
+fn rollback(
+    target: &std::path::Path,
+    backup: &std::path::Path,
+    current: &str,
+    original: &str,
+    apply: bool,
+) -> Result<Result<serde_json::Value, String>> {
+    let mut args = vec![
+        "config-rollback".as_ref(),
+        target.as_os_str(),
+        backup.as_os_str(),
+        current.as_ref(),
+        original.as_ref(),
+    ];
+    if apply {
+        args.push("--apply".as_ref());
+    }
+    config_cli(&args)
+}
+
 #[test]
 fn native_config_adoption_and_rollback_preserve_every_other_byte() -> Result<()> {
     let temp = tempfile::tempdir()?;
@@ -546,11 +595,11 @@ fn native_config_adoption_and_rollback_preserve_every_other_byte() -> Result<()>
     fs::write(&target, original)?;
     fs::set_permissions(&target, fs::Permissions::from_mode(0o600))?;
     let before = digest(original.as_bytes());
-    let plan = config::adopt(&target, &backup, &before, false)?;
+    let plan = adopt(&target, &backup, &before, false)?.map_err(anyhow::Error::msg)?;
     assert_eq!(plan["applied"], false);
     assert!(!backup.exists());
     assert_eq!(fs::read_to_string(&target)?, original);
-    let applied = config::adopt(&target, &backup, &before, true)?;
+    let applied = adopt(&target, &backup, &before, true)?.map_err(anyhow::Error::msg)?;
     assert_eq!(applied["applied"], true);
     assert!(!applied.to_string().contains("sensitive-test-value"));
     let updated = fs::read_to_string(&target)?;
@@ -569,18 +618,21 @@ fn native_config_adoption_and_rollback_preserve_every_other_byte() -> Result<()>
     let after = digest(updated.as_bytes());
     assert_eq!(plan["after_sha256"], after);
     assert_eq!(
-        config::rollback(&target, &backup, &after, &before, false)?["applied"],
+        rollback(&target, &backup, &after, &before, false)?.map_err(anyhow::Error::msg)?["applied"],
         false
     );
     assert_eq!(fs::read_to_string(&target)?, updated);
-    assert!(config::rollback(&target, &backup, &after, &digest(b"wrong"), true).is_err());
+    let wrong = rollback(&target, &backup, &after, &digest(b"wrong"), true)?;
+    assert!(wrong.is_err_and(|e| e.contains("backup digest mismatch")));
     fs::write(&target, format!("{updated}\n# later unrelated change\n"))?;
     let changed = fs::read(&target)?;
-    assert!(config::rollback(&target, &backup, &after, &before, true).is_err());
-    assert!(config::rollback(&target, &backup, &digest(&changed), &before, true).is_err());
+    let stale = rollback(&target, &backup, &after, &before, true)?;
+    assert!(stale.is_err_and(|e| e.contains("preimage hash changed")));
+    let later = rollback(&target, &backup, &digest(&changed), &before, true)?;
+    assert!(later.is_err_and(|e| e.contains("later settings")));
     assert_eq!(fs::read(&target)?, changed);
     fs::write(&target, &updated)?;
-    config::rollback(&target, &backup, &after, &before, true)?;
+    rollback(&target, &backup, &after, &before, true)?.map_err(anyhow::Error::msg)?;
     assert_eq!(fs::read_to_string(&target)?, original);
     Ok(())
 }
@@ -601,23 +653,25 @@ fn native_config_refuses_conflicts_stale_bytes_and_lock_contention() -> Result<(
     ] {
         fs::write(&target, original)?;
         fs::set_permissions(&target, fs::Permissions::from_mode(0o600))?;
-        let result = config::adopt(&target, &backup, &digest(original.as_bytes()), true);
-        assert!(result.is_err());
-        assert!(!format!("{result:?}").contains("sensitive-test-value"));
+        let result = adopt(&target, &backup, &digest(original.as_bytes()), true)?;
+        assert!(result.is_err_and(|e| !e.contains("sensitive-test-value") && !e.contains("busy")));
         assert_eq!(fs::read_to_string(&target)?, original);
         assert!(!backup.exists());
     }
     let original = "model='gpt-6-astra'\n";
     fs::write(&target, original)?;
-    assert!(config::adopt(&target, &backup, &digest(b"stale"), true).is_err());
+    let stale = adopt(&target, &backup, &digest(b"stale"), true)?;
+    assert!(stale.is_err_and(|e| e.contains("preimage hash changed")));
+    fs::write(&backup, "older recovery point")?;
+    let kept = adopt(&target, &backup, &digest(original.as_bytes()), true)?;
+    assert!(kept.is_err_and(|e| e.contains("backup already exists")));
+    assert_eq!(fs::read_to_string(&backup)?, "older recovery point");
+    fs::remove_file(&backup)?;
     let owner = fs::File::open(&target)?;
     owner.lock_exclusive()?;
-    assert!(config::adopt(&target, &backup, &digest(original.as_bytes()), true).is_err());
+    let busy = adopt(&target, &backup, &digest(original.as_bytes()), true)?;
+    assert!(busy.is_err_and(|e| e.contains("config busy")));
     assert!(!backup.exists());
-    drop(owner);
-    fs::write(&backup, "older recovery point")?;
-    assert!(config::adopt(&target, &backup, &digest(original.as_bytes()), true).is_err());
-    assert_eq!(fs::read_to_string(&backup)?, "older recovery point");
     assert_eq!(fs::read_to_string(&target)?, original);
     Ok(())
 }
@@ -642,7 +696,8 @@ fn native_config_cli_refuses_links_and_keeps_dry_run_nonmutating() -> Result<()>
     assert!(!backup.exists());
     fs::rename(&target, temp.path().join("original.toml"))?;
     symlink(temp.path().join("original.toml"), &target)?;
-    assert!(config::adopt(&target, &backup, &digest(original.as_bytes()), true).is_err());
+    let linked = adopt(&target, &backup, &digest(original.as_bytes()), true)?;
+    assert!(linked.is_err_and(|e| e.contains("without links")));
     assert!(!backup.exists());
     Ok(())
 }
