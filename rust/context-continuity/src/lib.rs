@@ -93,6 +93,21 @@ pub struct Identity {
     pub thread: String,
     pub model: String,
 }
+
+// Herdr's public IDs use bijective base 32, including 0 as digit 32.
+// Native owner: herdr src/workspace.rs::decode_public_number (v0.9.0).
+fn native_public_number(value: &str) -> bool {
+    const ALPHABET: &[u8; 32] = b"123456789ABCDEFGHJKMNPQRSTVWXYZ0";
+    !value.is_empty()
+        && value
+            .bytes()
+            .try_fold(0usize, |number, byte| {
+                let digit = ALPHABET.iter().position(|candidate| *candidate == byte)?;
+                number.checked_mul(32)?.checked_add(digit + 1)
+            })
+            .is_some()
+}
+
 impl Identity {
     pub fn validate(&self) -> Result<()> {
         key(&self.host)?;
@@ -110,11 +125,7 @@ impl Identity {
             .pane
             .strip_prefix('w')
             .and_then(|v| v.split_once(":p"))
-            .is_some_and(|(w, p)| {
-                !w.is_empty()
-                    && !p.is_empty()
-                    && w.bytes().chain(p.bytes()).all(|c| c.is_ascii_digit())
-            });
+            .is_some_and(|(w, p)| native_public_number(w) && native_public_number(p));
         ensure!(
             native_pane
                 && self

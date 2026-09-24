@@ -20,6 +20,131 @@ struct Fixture {
     store: PathBuf,
     cp: Checkpoint,
 }
+
+fn identity_cli(
+    root: &std::path::Path,
+    pane: &str,
+    ambient_session: Option<&str>,
+    explicit_session: Option<&str>,
+) -> Result<std::process::Output> {
+    let mut command = Command::new(env!("CARGO_BIN_EXE_fm-context-continuity"));
+    command
+        .env_clear()
+        .env("HERDR_PANE_ID", pane)
+        .args(["identity", "--host", "orac-fixture", "--root"])
+        .arg(root)
+        .args(["--thread", "fixture-thread", "--terminal", "term_fixture"]);
+    if let Some(session) = ambient_session {
+        command.env("HERDR_SESSION", session);
+    }
+    if let Some(session) = explicit_session {
+        command.args(["--session", session]);
+    }
+    Ok(command.output()?)
+}
+
+#[test]
+fn identity_cli_preserves_native_letter_ids() -> Result<()> {
+    let root = tempfile::tempdir()?;
+    for pane in [
+        "w1:p1", "w1:p9", "w1:pA", "w1:pZ", "w1:p0", "w1:p11", "w1:p1A", "w1E:p1", "w0:p0",
+    ] {
+        let output = identity_cli(root.path(), pane, Some("fm-lab-fixture"), None)?;
+        assert!(
+            output.status.success(),
+            "{pane}: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let identity: Identity = serde_json::from_slice(&output.stdout)?;
+        assert_eq!(identity.pane, pane);
+        assert_eq!(identity.terminal, "term_fixture");
+        assert_eq!(identity.session, "fm-lab-fixture");
+    }
+    Ok(())
+}
+
+#[test]
+fn identity_cli_rejects_non_native_spelling() -> Result<()> {
+    let root = tempfile::tempdir()?;
+    for pane in [
+        "", "w:p1", "w1:p", "w1:pI", "wL:p1", "w1:pO", "w1:pU", "w1:pa", "wa:p1", "W1:p1", "w1:P1",
+        "w1:p1:p1", "w1:p-1", "w1:p1 ", "w1:p１", "1", "w1:tA",
+    ] {
+        let output = identity_cli(root.path(), pane, Some("fm-lab-fixture"), None)?;
+        assert!(!output.status.success(), "accepted {pane:?}");
+        assert!(String::from_utf8_lossy(&output.stderr).contains("native Herdr pane"));
+        assert!(output.stdout.is_empty());
+    }
+    Ok(())
+}
+
+#[test]
+fn identity_cli_checks_native_number_boundary() -> Result<()> {
+    let root = tempfile::tempdir()?;
+    // Independently calculated bijective base-32 encodings of usize::MAX and MAX+1.
+    let (maximum, overflow) = if usize::BITS == 64 {
+        ("FZZZZZZZZZZZZ", "FZZZZZZZZZZZ0")
+    } else {
+        assert_eq!(usize::BITS, 32);
+        ("3ZZZZZZ", "3ZZZZZ0")
+    };
+    for pane in [format!("w{maximum}:p1"), format!("w1:p{maximum}")] {
+        let output = identity_cli(root.path(), &pane, Some("fm-lab-fixture"), None)?;
+        assert!(
+            output.status.success(),
+            "{pane}: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+    for pane in [
+        format!("w{overflow}:p1"),
+        format!("w1:p{overflow}"),
+        format!("w1:p{}", "1".repeat(128)),
+    ] {
+        let output = identity_cli(root.path(), &pane, Some("fm-lab-fixture"), None)?;
+        assert!(!output.status.success(), "accepted overflowing {pane}");
+        assert!(String::from_utf8_lossy(&output.stderr).contains("native Herdr pane"));
+    }
+    Ok(())
+}
+
+#[test]
+fn identity_cli_requires_unambiguous_session_input() -> Result<()> {
+    let root = tempfile::tempdir()?;
+    // These explicit values model prior owner verification; the CLI performs no live lookup.
+    for (ambient, explicit, expected) in [
+        (None, Some("default"), "default"),
+        (None, Some("fm-lab-fixture"), "fm-lab-fixture"),
+        (Some("fm-lab-fixture"), None, "fm-lab-fixture"),
+        (
+            Some("fm-lab-fixture"),
+            Some("fm-lab-fixture"),
+            "fm-lab-fixture",
+        ),
+    ] {
+        let output = identity_cli(root.path(), "w1:p1A", ambient, explicit)?;
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let identity: Identity = serde_json::from_slice(&output.stdout)?;
+        assert_eq!(identity.session, expected);
+        assert_eq!(identity.pane, "w1:p1A");
+    }
+    for (ambient, explicit, error) in [
+        (None, None, "HERDR_SESSION absent"),
+        (Some("fm-lab-other"), Some("default"), "session mismatch"),
+        (Some(""), Some("default"), "session mismatch"),
+        (None, Some(""), "invalid identifier"),
+    ] {
+        let output = identity_cli(root.path(), "w1:p1", ambient, explicit)?;
+        assert!(!output.status.success());
+        assert!(String::from_utf8_lossy(&output.stderr).contains(error));
+        assert!(output.stdout.is_empty());
+    }
+    Ok(())
+}
 impl Fixture {
     fn new() -> Result<Self> {
         let temp = tempfile::tempdir()?;

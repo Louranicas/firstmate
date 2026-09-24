@@ -1,5 +1,5 @@
 //! `fm-context-continuity --help` owns executable usage.
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, ensure};
 use clap::{Parser, Subcommand};
 use fm_context_continuity::{
     Checkpoint, Effect, Identity, Legacy, Store, Telemetry, assess, digest, now, read_bounded,
@@ -85,7 +85,7 @@ enum Command {
     Assess { input: PathBuf, identity: PathBuf },
     /// Hash a bounded regular source for a reviewed checkpoint manifest.
     Hash { path: PathBuf },
-    /// Capture native Herdr environment identity from INSIDE the intended pane.
+    /// Capture identity INSIDE the intended pane after its owner verifies session/socket/pane binding.
     Identity {
         #[arg(long)]
         host: String,
@@ -93,6 +93,11 @@ enum Command {
         root: PathBuf,
         #[arg(long)]
         thread: String,
+        #[arg(
+            long,
+            help = "Owner-verified native session; required if HERDR_SESSION is absent, must match if present. Does not perform live ownership verification"
+        )]
+        session: Option<String>,
         #[arg(
             long,
             help = "terminal_id from the same pane's current native API response"
@@ -245,11 +250,24 @@ fn run() -> Result<()> {
             host,
             root,
             thread,
+            session,
             terminal,
             model,
         } => {
-            let session = std::env::var("HERDR_SESSION")
-                .context("HERDR_SESSION absent; run inside the intended native pane")?;
+            let ambient = match std::env::var("HERDR_SESSION") {
+                Ok(value) => Some(value),
+                Err(std::env::VarError::NotPresent) => None,
+                Err(error) => return Err(error).context("HERDR_SESSION is not valid Unicode"),
+            };
+            if let (Some(explicit), Some(ambient)) = (&session, &ambient) {
+                ensure!(
+                    explicit == ambient,
+                    "explicit/ambient Herdr session mismatch"
+                );
+            }
+            let session = session.or(ambient).context(
+                "HERDR_SESSION absent; supply --session only after the owner verifies native session/socket/pane binding",
+            )?;
             let pane = std::env::var("HERDR_PANE_ID")
                 .context("HERDR_PANE_ID absent; do not substitute a Zellij index")?;
             let identity = Identity {

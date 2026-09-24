@@ -45,6 +45,13 @@ It does not retrofit flags into already running sessions or automatically interc
 Other models, backends and primary harnesses keep their existing paths.
 A Herdr pane is the current journal identity format; legacy Zellij endpoints cannot be substituted.
 
+Capture identity inside the intended pane only after its owner verifies the current session/socket/pane binding.
+Firstmate's existing `fm_backend_herdr_launcher_identity` in [the Herdr backend](../bin/backends/herdr.sh) owns that verification; read the terminal incarnation from the same pane's current native API response.
+The `identity` command accepts an explicit owner-verified session when `HERDR_SESSION` is absent and refuses disagreement when both are supplied.
+Absence alone does not establish the default session, and supplying a session is an assertion of prior owner verification, not a live check performed by the journal.
+Reverify ownership immediately before capture and reject drift; do not reuse a historical endpoint receipt as current authority.
+CLI help owns the exact arguments.
+
 For automatic adoption through native configuration, the owning operator must inspect the actual config and launch path, preserve a recoverable backup and verify effective settings in a new isolated process before coordinated rollout.
 The native top-level compaction keys are process-wide: changing the selected model does not remove those settings.
 Adding them globally therefore also affects new sessions that explicitly select another model; Astra-only adoption needs a model-aware launch owner or a separately scoped runtime.
