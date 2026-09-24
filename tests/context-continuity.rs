@@ -5,7 +5,7 @@ use fm_context_continuity::*;
 use rusqlite::Connection;
 use std::{
     fs,
-    os::unix::fs::{PermissionsExt, symlink},
+    os::unix::fs::{MetadataExt, PermissionsExt, symlink},
     path::PathBuf,
     process::{Command, Stdio},
     time::Duration,
@@ -309,6 +309,45 @@ fn sqlite_backup_restore_and_migration_are_non_destructive() -> Result<()> {
     old_db.migrate(&f.root.join("unused.sqlite3"))?;
     assert!(!f.root.join("unused.sqlite3").exists());
     assert_eq!(old_db.version()?, 2);
+    Ok(())
+}
+#[test]
+fn cli_backup_and_migrate_accept_bare_relative_destination() -> Result<()> {
+    let f = Fixture::new()?;
+    f.open()?.capture(&f.cp, now()?)?;
+    let run = |args: &[&str]| {
+        Command::new(env!("CARGO_BIN_EXE_fm-context-continuity"))
+            .current_dir(&f.root)
+            .args(args)
+            .output()
+    };
+    let out = run(&["backup", "store", "bare.sqlite3"])?;
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let saved = f.root.join("bare.sqlite3");
+    assert_eq!(fs::metadata(&saved)?.mode() & 0o777, 0o600);
+    Store::restore(&saved, &f.root.join("from-bare"))?;
+    assert!(
+        Store::open(&f.root.join("from-bare"), false)?
+            .validate(&f.cp.id, &f.cp.identity, now()?)
+            .is_ok()
+    );
+    assert!(!run(&["backup", "store", "bare.sqlite3"])?.status.success());
+    Store::open(&f.root.join("legacy-store"), true)?;
+    let out = run(&["migrate", "legacy-store", "pre-v2.sqlite3"])?;
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(f.root.join("pre-v2.sqlite3").is_file());
+    assert_eq!(
+        Store::open(&f.root.join("legacy-store"), false)?.version()?,
+        2
+    );
     Ok(())
 }
 #[test]

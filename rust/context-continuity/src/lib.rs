@@ -528,7 +528,13 @@ impl Store {
             .open(destination)?;
         self.conn.backup("main", destination, None)?;
         file.sync_all()?;
-        File::open(destination.parent().context("backup parent absent")?)?.sync_all()?;
+        let parent = destination.parent().context("backup parent absent")?;
+        File::open(if parent.as_os_str().is_empty() {
+            Path::new(".")
+        } else {
+            parent
+        })?
+        .sync_all()?;
         Ok(())
     }
     pub fn restore(backup: &Path, destination: &Path) -> Result<()> {
