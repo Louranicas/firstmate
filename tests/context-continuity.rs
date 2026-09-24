@@ -513,3 +513,113 @@ fn launch_dry_run_pins_full_context_policy_and_never_starts_codex() -> Result<()
     )));
     Ok(())
 }
+
+#[test]
+fn native_config_adoption_and_rollback_preserve_every_other_byte() -> Result<()> {
+    let temp = tempfile::tempdir()?;
+    let target = temp.path().join("config.toml");
+    let backup = temp.path().join("before.toml");
+    let original = "# keep comment\nmodel = \"gpt-6-astra\"\nmodel_reasoning_effort = \"high\"\n[mcp_servers.fixture]\nfixture_value = \"sensitive-test-value\"\n";
+    fs::write(&target, original)?;
+    fs::set_permissions(&target, fs::Permissions::from_mode(0o600))?;
+    let before = digest(original.as_bytes());
+    let plan = config::adopt(&target, &backup, &before, false)?;
+    assert_eq!(plan["applied"], false);
+    assert!(!backup.exists());
+    assert_eq!(fs::read_to_string(&target)?, original);
+    let applied = config::adopt(&target, &backup, &before, true)?;
+    assert_eq!(applied["applied"], true);
+    assert!(!applied.to_string().contains("sensitive-test-value"));
+    let updated = fs::read_to_string(&target)?;
+    assert!(updated.ends_with(original));
+    let parsed: toml::Value = updated.parse()?;
+    assert_eq!(
+        parsed["model_auto_compact_token_limit"].as_integer(),
+        Some(230000)
+    );
+    assert_eq!(
+        parsed["model_auto_compact_token_limit_scope"].as_str(),
+        Some("total")
+    );
+    assert_eq!(fs::read_to_string(&backup)?, original);
+    assert_eq!(fs::metadata(&backup)?.permissions().mode() & 0o777, 0o600);
+    let after = digest(updated.as_bytes());
+    assert_eq!(plan["after_sha256"], after);
+    assert_eq!(
+        config::rollback(&target, &backup, &after, &before, false)?["applied"],
+        false
+    );
+    assert_eq!(fs::read_to_string(&target)?, updated);
+    assert!(config::rollback(&target, &backup, &after, &digest(b"wrong"), true).is_err());
+    fs::write(&target, format!("{updated}\n# later unrelated change\n"))?;
+    let changed = fs::read(&target)?;
+    assert!(config::rollback(&target, &backup, &after, &before, true).is_err());
+    assert!(config::rollback(&target, &backup, &digest(&changed), &before, true).is_err());
+    assert_eq!(fs::read(&target)?, changed);
+    fs::write(&target, &updated)?;
+    config::rollback(&target, &backup, &after, &before, true)?;
+    assert_eq!(fs::read_to_string(&target)?, original);
+    Ok(())
+}
+
+#[test]
+fn native_config_refuses_conflicts_stale_bytes_and_lock_contention() -> Result<()> {
+    use fs2::FileExt;
+    let temp = tempfile::tempdir()?;
+    let target = temp.path().join("config.toml");
+    let backup = temp.path().join("before.toml");
+    for original in [
+        "model='gpt-6-sol'\n",
+        "model='gpt-6-astra'\nmodel_auto_compact_token_limit=123\n",
+        "model='gpt-6-astra'\nmodel_auto_compact_token_limit_scope='total'\n",
+        "model='gpt-6-astra'\nprofile='chosen'\n",
+        "model='gpt-6-astra'\n[profiles.existing]\nmodel='gpt-6-sol'\n",
+        "sensitive-test-value=NOT_TOML\n",
+    ] {
+        fs::write(&target, original)?;
+        fs::set_permissions(&target, fs::Permissions::from_mode(0o600))?;
+        let result = config::adopt(&target, &backup, &digest(original.as_bytes()), true);
+        assert!(result.is_err());
+        assert!(!format!("{result:?}").contains("sensitive-test-value"));
+        assert_eq!(fs::read_to_string(&target)?, original);
+        assert!(!backup.exists());
+    }
+    let original = "model='gpt-6-astra'\n";
+    fs::write(&target, original)?;
+    assert!(config::adopt(&target, &backup, &digest(b"stale"), true).is_err());
+    let owner = fs::File::open(&target)?;
+    owner.lock_exclusive()?;
+    assert!(config::adopt(&target, &backup, &digest(original.as_bytes()), true).is_err());
+    assert!(!backup.exists());
+    drop(owner);
+    fs::write(&backup, "older recovery point")?;
+    assert!(config::adopt(&target, &backup, &digest(original.as_bytes()), true).is_err());
+    assert_eq!(fs::read_to_string(&backup)?, "older recovery point");
+    assert_eq!(fs::read_to_string(&target)?, original);
+    Ok(())
+}
+
+#[test]
+fn native_config_cli_refuses_links_and_keeps_dry_run_nonmutating() -> Result<()> {
+    let temp = tempfile::tempdir()?;
+    let target = temp.path().join("config.toml");
+    let backup = temp.path().join("before.toml");
+    let original = "model='gpt-6-astra'\n";
+    fs::write(&target, original)?;
+    fs::set_permissions(&target, fs::Permissions::from_mode(0o600))?;
+    let output = Command::new(env!("CARGO_BIN_EXE_fm-context-continuity"))
+        .arg("config-adopt")
+        .arg(&target)
+        .arg(&backup)
+        .arg(digest(original.as_bytes()))
+        .output()?;
+    assert!(output.status.success());
+    let receipt: serde_json::Value = serde_json::from_slice(&output.stdout)?;
+    assert_eq!(receipt["applied"], false);
+    assert!(!backup.exists());
+    fs::rename(&target, temp.path().join("original.toml"))?;
+    symlink(temp.path().join("original.toml"), &target)?;
+    assert!(config::adopt(&target, &backup, &digest(original.as_bytes()), true).is_err());
+    assert!(!backup.exists());
+    Ok(())
+}

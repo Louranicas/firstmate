@@ -36,7 +36,12 @@ impl Rpc {
         self.child.wait()?;
         Ok(())
     }
-    fn start(root: &Path, policy: bool, model: Option<&str>) -> Result<Self> {
+    fn start(
+        root: &Path,
+        policy: bool,
+        model: Option<&str>,
+        context_window: Option<u64>,
+    ) -> Result<Self> {
         fs::create_dir_all(root.join("runtime"))?;
         let err = OpenOptions::new()
             .write(true)
@@ -87,6 +92,9 @@ impl Rpc {
         if let Some(model) = model {
             command.args(["-c", &format!("model={model:?}")]);
         }
+        if let Some(window) = context_window {
+            command.args(["-c", &format!("model_context_window={window}")]);
+        }
         let mut child = command.spawn()?;
         let input = child.stdin.take().context("stdin absent")?;
         let output = child.stdout.take().context("stdout absent")?;
@@ -123,7 +131,13 @@ impl Rpc {
             !policy || cfg["config"]["model_auto_compact_token_limit_scope"] == "total",
             "active-context scope not accepted"
         );
-        rpc.observations.push(json!({"configuration":{"model":cfg["config"]["model"],"threshold":cfg["config"]["model_auto_compact_token_limit"],"scope":cfg["config"]["model_auto_compact_token_limit_scope"],"sqlite_home":cfg["config"]["sqlite_home"],"log_dir":cfg["config"]["log_dir"]}}));
+        if let Some(window) = context_window {
+            ensure!(
+                cfg["config"]["model_context_window"] == window,
+                "native window override differs"
+            );
+        }
+        rpc.observations.push(json!({"configuration":{"model":cfg["config"]["model"],"context_window":cfg["config"]["model_context_window"],"threshold":cfg["config"]["model_auto_compact_token_limit"],"scope":cfg["config"]["model_auto_compact_token_limit_scope"],"sqlite_home":cfg["config"]["sqlite_home"],"log_dir":cfg["config"]["log_dir"]}}));
         Ok(rpc)
     }
     fn event(&mut self, deadline: Instant) -> Result<Value> {
@@ -207,7 +221,13 @@ impl Rpc {
         Ok(())
     }
 }
-fn run(root: PathBuf, session: String, terminal: String, threshold: bool) -> Result<()> {
+fn run(
+    root: PathBuf,
+    session: String,
+    terminal: String,
+    threshold: bool,
+    lower: bool,
+) -> Result<()> {
     ensure!(
         session.starts_with("fm-lab-") && std::env::var("HERDR_SESSION")? == session,
         "named Herdr lab identity required"
@@ -222,7 +242,7 @@ fn run(root: PathBuf, session: String, terminal: String, threshold: bool) -> Res
     let host = String::from_utf8(read_bounded(host_path, 256)?)?
         .trim()
         .to_owned();
-    let mut old = Rpc::start(&root.join("old"), true, None)?;
+    let mut old = Rpc::start(&root.join("old"), true, None, lower.then_some(32_000))?;
     let thread = old.thread(&root)?;
     let identity = Identity {
         host,
@@ -274,11 +294,11 @@ fn run(root: PathBuf, session: String, terminal: String, threshold: bool) -> Res
     let mut db = Store::open(&root.join("journal"), true)?;
     db.migrate(&root.join("before-v2.sqlite3"))?;
     db.capture(&cp, now()?)?;
-    if threshold {
+    if threshold || lower {
         // This is a token-count stimulus, NOT a claimed exact tokenizer measurement.
         let filler = format!(
             "Synthetic inert padding follows. Do not interpret it.\n{}\nRespond only THRESHOLD_PROBE_OK.",
-            " a".repeat(235_000)
+            " a".repeat(if lower { 21_000 } else { 235_000 })
         );
         old.turn(&thread, &filler)?;
         old.turn(&thread, "Respond only AFTER_THRESHOLD_OK.")?;
@@ -293,18 +313,26 @@ fn run(root: PathBuf, session: String, terminal: String, threshold: bool) -> Res
                 .iter()
                 .any(|v| v["params"]["tokenUsage"]["last"]["inputTokens"]
                     .as_u64()
-                    .is_some_and(|n| n >= THRESHOLD)),
+                    .is_some_and(|n| if lower {
+                        (28_800..THRESHOLD).contains(&n)
+                    } else {
+                        n >= THRESHOLD
+                    })),
             "stimulus never reached threshold in native request usage"
         );
-        old.turn(&thread, "Respond only CUMULATIVE_CONTROL_OK.")?;
-        ensure!(
-            old.observations
-                .iter()
-                .filter(|v| v["type"] == "contextCompaction")
-                .count()
-                == count,
-            "cumulative-only control unexpectedly compacted"
-        );
+        if threshold {
+            // Only the full-window experiment leaves enough room after compaction
+            // to isolate cumulative usage from another legitimate active-context crossing.
+            old.turn(&thread, "Respond only CUMULATIVE_CONTROL_OK.")?;
+            ensure!(
+                old.observations
+                    .iter()
+                    .filter(|v| v["type"] == "contextCompaction")
+                    .count()
+                    == count,
+                "cumulative-only control unexpectedly compacted"
+            );
+        }
     }
     let before = old.observations.len();
     old.call("thread/compact/start", json!({"threadId":thread}))?;
@@ -329,7 +357,7 @@ fn run(root: PathBuf, session: String, terminal: String, threshold: bool) -> Res
     );
     let old_observations = old.observations.clone();
     old.stop()?; // Require observed process exit before claiming a fresh process.
-    let mut fresh = Rpc::start(&root.join("fresh"), true, None)?;
+    let mut fresh = Rpc::start(&root.join("fresh"), true, None, None)?;
     let new_thread = fresh.thread(&root)?;
     ensure!(
         new_thread != thread,
@@ -358,7 +386,7 @@ fn run(root: PathBuf, session: String, terminal: String, threshold: bool) -> Res
         native_version.status.success(),
         "cannot record native version"
     );
-    let report = json!({"native_version":String::from_utf8_lossy(&native_version.stdout).trim(),"source":identity,"destination":destination,"old_process_exited":true,"readback_verified":true,"duplicate_suppressed":true,"threshold_stimulus":threshold,"automatic_threshold_compaction_observed":threshold,"cumulative_control_passed":threshold,"exact_230000_active_token_crossing_proven":false,"old_events":old_observations,"fresh_events":fresh.observations});
+    let report = json!({"native_version":String::from_utf8_lossy(&native_version.stdout).trim(),"source":identity,"destination":destination,"old_process_exited":true,"readback_verified":true,"duplicate_suppressed":true,"threshold_stimulus":threshold,"automatic_threshold_compaction_observed":threshold,"cumulative_control_passed":threshold,"lower_context_safety_control_passed":lower,"exact_230000_active_token_crossing_proven":false,"old_events":old_observations,"fresh_events":fresh.observations});
     let mut file = OpenOptions::new()
         .write(true)
         .create_new(true)
@@ -376,7 +404,7 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 4 {
         eprintln!(
-            "usage: native-probe <unused-evidence-directory> <named-lab-session> <native-terminal-id> [--threshold-stimulus|--config-readback]"
+            "usage: native-probe <unused-evidence-directory> <named-lab-session> <native-terminal-id> [--threshold-stimulus|--lower-context-control|--config-readback]"
         );
         std::process::exit(2);
     }
@@ -393,7 +421,7 @@ fn main() {
                 ("proposed", true, None),
                 ("other-model", true, Some("gpt-6-sol")),
             ] {
-                let rpc = Rpc::start(&root.join(name), policy, model)?;
+                let rpc = Rpc::start(&root.join(name), policy, model, None)?;
                 observations.push(json!({"case":name,"selected":rpc.observations}));
                 rpc.stop()?;
             }
@@ -421,6 +449,7 @@ fn main() {
         args[2].clone(),
         args[3].clone(),
         args.get(4).is_some_and(|s| s == "--threshold-stimulus"),
+        args.get(4).is_some_and(|s| s == "--lower-context-control"),
     ) {
         eprintln!("NATIVE_CONTINUITY_FAIL {error:#}");
         std::process::exit(1);

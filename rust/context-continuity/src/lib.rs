@@ -1,6 +1,8 @@
 //! Durable data only: this module never runs a saved command or restarts a runtime.
 //! `docs/context-continuity.md` owns the policy; CLI help owns command mechanics.
 
+pub mod config;
+
 use anyhow::{Context, Result, bail, ensure};
 use fs2::FileExt;
 use rusqlite::{Connection, OpenFlags, OptionalExtension, params};
